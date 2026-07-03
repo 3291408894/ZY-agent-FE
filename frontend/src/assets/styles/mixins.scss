@@ -1,0 +1,130 @@
+// ================================================================
+// 智翼 (ZhiYi) — SCSS Mixins
+// ================================================================
+
+// ── 响应式断点 ──
+$breakpoints: (
+  'xs': 480px,
+  'sm': 640px,
+  'md': 768px,
+  'lg': 1024px,
+  'xl': 1280px,
+  'xxl': 1536px,
+);
+
+// 向上匹配（≥ breakpoint）
+@use 'sass:map';
+
+@mixin respond-up($bp) {
+  @media (min-width: map.get($breakpoints, $bp)) {
+    @content;
+  }
+}
+
+// 向下匹配（≤ breakpoint）
+@mixin respond-down($bp) {
+  @media (max-width: map.get($breakpoints, $bp) - 1) {
+    @content;
+  }
+}
+
+// ── 文本截断 ──
+@mixin text-ellipsis($lines: 1) {
+  @if $lines == 1 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  } @else {
+    display: -webkit-box;
+    -webkit-line-clamp: $lines;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+// ── 清除浮动 ──
+@mixin clearfix {
+  &::after {
+    content: '';
+    display: table;
+    clear: both;
+  }
+}
+
+// ── Flex 居中 ──
+@mixin flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+// ── 卡片样式 ──
+@mixin card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+@mixin card-hover {
+  @include card;
+  transition: box-shadow var(--transition-base),
+    transform var(--transition-base);
+  &:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+}
+
+// ── 滚动条美化 ──
+@mixin scrollbar($width: 6px) {
+  &::-webkit-scrollbar {
+    width: $width;
+    height: $width;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 3px;
+    &:hover {
+      background: var(--color-text-placeholder);
+    }
+  }
+}
+
+// ── 护眼纸张纹理 ──
+@mixin paper-texture {
+  background-color: var(--color-bg);
+  background-image: linear-gradient(
+      0deg,
+      transparent 24%,
+      rgba(0, 0, 0, 0.02) 25%,
+      rgba(0, 0, 0, 0.02) 26%,
+      transparent 27%,
+      transparent 74%,
+      rgba(0, 0, 0, 0.02) 75%,
+      rgba(0, 0, 0, 0.02) 76%,
+      transparent 77%
+    ),
+    linear-gradient(
+      90deg,
+      transparent 24%,
+      rgba(0, 0, 0, 0.02) 25%,
+      rgba(0, 0, 0, 0.02) 26%,
+      transparent 27%,
+      transparent 74%,
+      rgba(0, 0, 0, 0.02) 75%,
+      rgba(0, 0, 0, 0.02) 76%,
+      transparent 77%
+    );
+  background-size: 48px 48px;
+}
+
+// ── 焦点样式（无障碍） ──
+@mixin focus-ring {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
