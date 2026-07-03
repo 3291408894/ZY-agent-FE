@@ -1,53 +1,77 @@
 // ================================================================
 // 智翼 (ZhiYi) — 认证模块 API
-// 对应 PBI_01 接口：POST /auth/register, POST /auth/login ...
+// 对应 PBI_01，与 认证模块接口说明书.md 对齐
 // ================================================================
 
 import { post, get, put } from '../request'
-import type { ILoginRequest, IRegisterRequest, ILoginResponse, IResetPasswordRequest } from '@/types'
+import type {
+  IRegisterRequest,
+  ILoginRequest,
+  IUpdateProfileRequest,
+  IUserProfile,
+  IDashboardData,
+} from '@/types'
 
-// ── 注册 ──
+// ================================================================
+// 认证接口（/auth）— 无需登录态
+// ================================================================
+
+/** 用户注册 — POST /api/v1/auth/register */
 export function register(data: IRegisterRequest) {
-  return post<{ user_id: string; email: string; grade: string }>(
+  return post<{ user_id: string; email: string | null; grade: string }>(
     '/api/v1/auth/register',
     data
   )
 }
 
-// ── 登录 ──
+/** 用户登录 — POST /api/v1/auth/login */
 export function login(data: ILoginRequest) {
-  return post<ILoginResponse>('/api/v1/auth/login', data)
+  return post<{
+    access_token: string
+    token_type: 'bearer'
+    expires_in: number
+    user: {
+      id: string
+      email: string | null
+      phone: string | null
+      nickname: string
+      grade: string | null
+      subjects: string[]
+      textbook_version: string | null
+      avatar_url: string | null
+    }
+  }>('/api/v1/auth/login', data)
 }
 
-// ── 找回密码 ──
-export function resetPassword(data: IResetPasswordRequest) {
-  return post('/api/v1/auth/reset-password', data)
+/** 发送重置密码验证码 — POST /api/v1/auth/reset-password */
+export function sendResetCode(email: string) {
+  return post<null>('/api/v1/auth/reset-password', { email })
 }
 
-// ── 发送验证码 ──
-export function sendVerificationCode(email: string) {
-  return post('/api/v1/auth/reset-password/verify', { email })
+/** 验证并重置密码 — POST /api/v1/auth/reset-password/verify */
+export function resetPassword(data: {
+  email: string
+  code: string
+  new_password: string
+}) {
+  return post<null>('/api/v1/auth/reset-password/verify', data)
 }
 
-// ── 刷新 Token ──
-export function refreshToken(refreshToken: string) {
-  return post<{ access_token: string; expires_in: number }>(
-    '/api/v1/auth/refresh',
-    { refresh_token: refreshToken }
-  )
+// ================================================================
+// 用户接口（/users）— 需登录态
+// ================================================================
+
+/** 获取个人资料 — GET /api/v1/users/profile */
+export function getProfile() {
+  return get<IUserProfile>('/api/v1/users/profile')
 }
 
-// ── 获取用户资料 ──
-export function getUserProfile() {
-  return get('/api/v1/users/profile')
+/** 更新个人资料 — PUT /api/v1/users/profile */
+export function updateProfile(data: IUpdateProfileRequest) {
+  return put<IUserProfile>('/api/v1/users/profile', data)
 }
 
-// ── 更新用户资料 ──
-export function updateUserProfile(data: Record<string, any>) {
-  return put('/api/v1/users/profile', data)
-}
-
-// ── 获取仪表盘数据 ──
+/** 获取学习仪表盘 — GET /api/v1/users/dashboard */
 export function getDashboard() {
-  return get('/api/v1/users/dashboard')
+  return get<IDashboardData>('/api/v1/users/dashboard')
 }

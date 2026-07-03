@@ -2,17 +2,18 @@
 // ================================================================
 // LoginView — 登录页面
 // 对应 PBI_01：用户登录
+// 与 认证模块接口说明书.md §3.2 对齐
 // ================================================================
 
 import { ref, reactive } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { useUserStore } from '@/stores/user'
 import type { FormInstance, FormRules } from 'element-plus'
+import { login } from '@/api/modules/auth'
+import { useAuth } from '@/composables/useAuth'
 
-const router = useRouter()
 const route = useRoute()
-const userStore = useUserStore()
+const { onLoginSuccess } = useAuth()
 
 // ── 表单数据 ──
 const formRef = ref<FormInstance>()
@@ -22,35 +23,59 @@ const form = reactive({
   rememberMe: false,
 })
 
+// 密码校验：8-64 位（与接口说明书 §1 校验规则一致）
+const validatePassword = (_rule: any, value: string, callback: (err?: Error) => void) => {
+  if (!value) {
+    callback(new Error('请输入密码'))
+  } else if (value.length < 8 || value.length > 64) {
+    callback(new Error('密码长度 8-64 位'))
+  } else {
+    callback()
+  }
+}
+
 const rules: FormRules = {
   login: [
     { required: true, message: '请输入邮箱或手机号', trigger: 'blur' },
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码至少 6 位', trigger: 'blur' },
+    { required: true, validator: validatePassword, trigger: 'blur' },
   ],
 }
 
 const loading = ref(false)
+const errorMessage = ref('')
 
 // ── 登录 ──
 async function handleLogin() {
+  errorMessage.value = ''
+
   const valid = await formRef.value?.validate().catch(() => false)
   if (!valid) return
 
   loading.value = true
   try {
-    // TODO: 调用真实登录 API
-    // const res = await login({ login: form.login, password: form.password })
-    // userStore.setAuth(res.data.access_token, res.data.user)
+    const res = await login({ login: form.login, password: form.password })
 
-    // Mock 登录（开发阶段）
-    ElMessage.success('登录成功（Mock）')
-    const redirect = (route.query.redirect as string) || '/dashboard'
-    router.push(redirect)
+    // 持久化 Token
+    localStorage.setItem('access_token', res.access_token)
+
+    // 记住我：可扩展为刷新 Token 逻辑
+    if (form.rememberMe) {
+      localStorage.setItem('remember_me', 'true')
+    }
+
+    // 存储用户信息到 Store 并跳转
+    onLoginSuccess(res.access_token, res.user)
+    ElMessage.success(`欢迎回来，${res.user.nickname || '同学'}！`)
   } catch (e: any) {
-    ElMessage.error(e?.message || '登录失败，请重试')
+    // 按接口说明书：不区分账号错还是密码错，统一提示
+    const msg = e?.message || '登录失败，请重试'
+    if (msg.includes('账号或密码错误') || msg.includes('用户不存在')) {
+      errorMessage.value = '账号或密码错误，请检查后重试'
+    } else {
+      errorMessage.value = msg
+    }
   } finally {
     loading.value = false
   }
@@ -79,19 +104,42 @@ async function handleLogin() {
         <p>登录你的账号，继续学习之旅</p>
       </div>
 
+      <!-- 错误提示 -->
+      <el-alert
+        v-if="errorMessage"
+        :title="errorMessage"
+        type="error"
+        show-icon
+        :closable="true"
+        class="auth-card__error"
+        @close="errorMessage = ''"
+      />
+
       <!-- 表单 -->
-      <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @submit.prevent="handleLogin">
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-position="top"
+        @submit.prevent="handleLogin"
+      >
         <el-form-item label="邮箱 / 手机号" prop="login">
-          <el-input v-model="form.login" placeholder="请输入邮箱或手机号" :prefix-icon="User" />
+          <el-input
+            v-model="form.login"
+            placeholder="请输入邮箱或手机号"
+            :prefix-icon="User"
+            size="large"
+          />
         </el-form-item>
 
         <el-form-item label="密码" prop="password">
           <el-input
             v-model="form.password"
             type="password"
-            placeholder="请输入密码"
+            placeholder="请输入密码（8-64 位）"
             show-password
             :prefix-icon="Lock"
+            size="large"
             @keyup.enter="handleLogin"
           />
         </el-form-item>
@@ -172,6 +220,10 @@ async function handleLogin() {
       font-weight: var(--font-weight-bold);
       color: var(--color-text-primary);
     }
+  }
+
+  &__error {
+    margin-bottom: var(--spacing-lg);
   }
 
   &__options {

@@ -5,58 +5,82 @@
 
 // ================================================================
 // 用户 & 认证（PBI_01）
+// 与 认证模块接口说明书.md 对齐
 // ================================================================
 
 /** 注册请求 */
 export interface IRegisterRequest {
-  email: string
-  phone?: string
-  password: string
-  grade: string
-  subjects: string[]
+  email: string | null       // 邮箱（与 phone 至少填一个）
+  phone: string | null       // 手机号（与 email 至少填一个）
+  password: string           // 密码，8-64 位
+  grade: string              // 年级，如 "七年级"（必填）
+  subjects: string[]         // 学科偏好列表，默认 []
 }
 
 /** 登录请求 */
 export interface ILoginRequest {
-  login: string // 邮箱或手机号
-  password: string
+  login: string              // 邮箱或手机号
+  password: string           // 密码
 }
 
 /** 登录响应 */
 export interface ILoginResponse {
   access_token: string
   token_type: 'bearer'
-  expires_in: number
-  user: IUserProfile
+  expires_in: number         // Token 有效时长（秒），86400 = 24小时
+  user: IUserBrief
 }
 
-/** 重置密码请求 */
+/** 重置密码 — 发送验证码 */
+export interface ISendResetCodeRequest {
+  email: string
+}
+
+/** 重置密码 — 验证并重置 */
 export interface IResetPasswordRequest {
   email: string
-  code?: string
-  new_password?: string
+  code: string
+  new_password: string
 }
 
-/** 用户档案 */
+/** 用户简要信息（登录响应中的 user 字段） */
+export interface IUserBrief {
+  id: string
+  email: string | null
+  phone: string | null
+  nickname: string
+  grade: string | null
+  subjects: string[]
+  textbook_version: string | null
+  avatar_url: string | null
+}
+
+/** 用户完整资料（/users/profile 返回） */
 export interface IUserProfile {
   id: string
-  email: string
-  phone?: string
-  nickname?: string
-  grade: string
+  email: string | null
+  phone: string | null
+  nickname: string
+  grade: string | null
   subjects: string[]
+  textbook_version: string | null
+  avatar_url: string | null
+  created_at: string         // ISO 8601 时间字符串
+}
+
+/** 更新资料请求（所有字段可选，只传要修改的） */
+export interface IUpdateProfileRequest {
+  nickname?: string
+  grade?: string
+  subjects?: string[]
   textbook_version?: string
-  avatar_url?: string
-  is_active: boolean
-  created_at: string
-  updated_at: string
 }
 
 /** 学习档案 */
 export interface ILearningProfile {
   id: string
   user_id: string
-  total_study_time: number // 秒
+  total_study_time: number   // 秒
   total_exercises: number
   correct_rate: number
   weak_points: string[]
@@ -65,13 +89,13 @@ export interface ILearningProfile {
 
 /** 仪表盘数据 */
 export interface IDashboardData {
-  total_study_time: number
-  total_exercises: number
-  correct_rate: number
-  recent_summaries: ISummaryRecord[]
-  recent_exercises: any[]
-  recommendations: any[]
-  weak_points: string[]
+  total_study_time: number    // 累计学习时长（秒）
+  total_exercises: number     // 累计做题数
+  correct_rate: number        // 正确率 (0.0 ~ 1.0)
+  recent_summaries: unknown[] // 近期总结列表（Sprint 1 前期为空数组）
+  recent_exercises: unknown[] // 近期习题列表（Sprint 1 前期为空数组）
+  recommendations: unknown[]  // 推荐内容（Sprint 1 前期为空数组）
+  weak_points: string[]       // 薄弱知识点
 }
 
 // ================================================================

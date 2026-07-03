@@ -1,10 +1,12 @@
 // ================================================================
 // 智翼 (ZhiYi) — 认证组合式函数
+// 封装登录态管理、Token 操作、路由守卫辅助
 // ================================================================
 
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import type { IUserBrief } from '@/types'
 
 export function useAuth() {
   const router = useRouter()
@@ -14,7 +16,7 @@ export function useAuth() {
   const currentUser = computed(() => userStore.profile)
 
   /** 登录成功后跳转 */
-  function onLoginSuccess(token: string, user: Parameters<typeof userStore.setAuth>[1]) {
+  function onLoginSuccess(token: string, user: IUserBrief) {
     userStore.setAuth(token, user)
     const redirect = (router.currentRoute.value.query.redirect as string) || '/dashboard'
     router.push(redirect)
@@ -35,11 +37,18 @@ export function useAuth() {
     return true
   }
 
+  /** 从 localStorage 恢复登录态（初始化时调用） */
+  function restoreAuth(): boolean {
+    const token = localStorage.getItem('access_token')
+    return !!token
+  }
+
   return {
     isLoggedIn,
     currentUser,
     onLoginSuccess,
     logout,
     requireAuth,
+    restoreAuth,
   }
 }

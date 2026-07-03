@@ -92,6 +92,16 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('@/views/auth/ProfileView.vue'),
+    meta: {
+      title: '个人资料 - 智翼',
+      requiresAuth: true,
+      icon: 'User',
+    },
+  },
+  {
     path: '/knowledge',
     name: 'Knowledge',
     component: () => import('@/views/knowledge/KnowledgeView.vue'),

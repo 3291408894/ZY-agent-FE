@@ -25,10 +25,10 @@ const userMenuVisible = ref(false)
 function handleCommand(command: string) {
   switch (command) {
     case 'profile':
-      router.push('/dashboard')
+      router.push('/profile')
       break
     case 'settings':
-      router.push('/dashboard')
+      router.push('/profile')
       break
     case 'logout':
       userStore.clearAuth()
