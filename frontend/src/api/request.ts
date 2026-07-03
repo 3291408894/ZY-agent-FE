@@ -49,17 +49,17 @@ request.interceptors.response.use(
 )
 
 /** GET 请求 */
-export function get<T = unknown>(url: string, params?: Record<string, unknown>): Promise<T> {
+export function get<T = unknown>(url: string, params?: object): Promise<T> {
   return request.get(url, { params }) as Promise<T>
 }
 
 /** POST 请求 */
-export function post<T = unknown>(url: string, data?: unknown): Promise<T> {
+export function post<T = unknown>(url: string, data?: object): Promise<T> {
   return request.post(url, data) as Promise<T>
 }
 
 /** PUT 请求 */
-export function put<T = unknown>(url: string, data?: unknown): Promise<T> {
+export function put<T = unknown>(url: string, data?: object): Promise<T> {
   return request.put(url, data) as Promise<T>
 }
 

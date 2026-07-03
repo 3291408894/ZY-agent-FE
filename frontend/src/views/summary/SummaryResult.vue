@@ -3,20 +3,18 @@
  * 课文总结 — 结果展示组件
  * 支持精简/详细模式切换、知识点展示、复制、重新生成
  */
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Document, CopyDocument, Download, Plus, Loading, Collection } from '@element-plus/icons-vue'
 import { useSummaryStore } from '@/stores/summary'
 import { SUMMARY_MODE_LABELS } from '@/api/modules/summary'
-import type { SummaryMode } from '@/types'
+import { renderMarkdown } from '@/utils/markdown'
 
 const emit = defineEmits<{
   (e: 'new-summary'): void
 }>()
 
 const store = useSummaryStore()
-
-// ── 展示模式（可切换查看精简/详细版） ──
-const displayMode = ref<SummaryMode>('detailed')
 
 const hasContent = computed(() => store.currentContent.length > 0)
 const hasKnowledgePoints = computed(() => store.currentKnowledgePoints.length > 0)
@@ -39,14 +37,22 @@ async function handleCopy() {
     await navigator.clipboard.writeText(store.currentContent)
     ElMessage.success('已复制到剪贴板')
   } catch {
-    // Fallback for older browsers
+    // Fallback: 浏览器不支持 Clipboard API 时使用 execCommand
     const textarea = document.createElement('textarea')
     textarea.value = store.currentContent
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
     document.body.appendChild(textarea)
     textarea.select()
-    document.execCommand('copy')
-    document.body.removeChild(textarea)
-    ElMessage.success('已复制到剪贴板')
+    try {
+      // @ts-expect-error execCommand is deprecated but still the only fallback
+      document.execCommand('copy')
+      ElMessage.success('已复制到剪贴板')
+    } catch {
+      ElMessage.error('复制失败，请手动复制')
+    } finally {
+      document.body.removeChild(textarea)
+    }
   }
 }
 
@@ -64,17 +70,6 @@ function handleDownload() {
   ElMessage.success('下载成功')
 }
 
-/** 将 Markdown 转换为 HTML 用于渲染 */
-function renderMarkdown(text: string): string {
-  return text
-    .replace(/^### (.+)$/gm, '<h3 class="md-h3">$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2 class="md-h2">$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1 class="md-h1">$1</h1>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n- (.+)/g, '\n<li>$1</li>')
-    .replace(/(\n<li>.*<\/li>)/gs, (match) => `<ul>${match}</ul>`)
-    .replace(/\n/g, '<br/>')
-}
 </script>
 
 <template>

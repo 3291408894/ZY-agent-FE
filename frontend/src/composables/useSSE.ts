@@ -107,7 +107,11 @@ export function useSSE() {
         }
       }
     } catch (err: unknown) {
-      if (err instanceof DOMException && err.name === 'AbortError') {
+      // 兼容浏览器和 Node.js 测试环境：
+      // - 浏览器：DOMException 不继承 Error，用 err.name 检测
+      // - Node.js：可能是 Error 或 DOMException
+      const errName = (err as { name?: string; code?: number })?.name
+      if (errName === 'AbortError') {
         return  // 用户主动取消
       }
       const msg = err instanceof Error ? err.message : '网络连接失败'

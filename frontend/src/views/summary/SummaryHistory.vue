@@ -5,9 +5,10 @@
  */
 import { ref, onMounted, computed } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
+import { Delete, Loading } from '@element-plus/icons-vue'
 import { useSummaryStore } from '@/stores/summary'
 import { SUMMARY_MODE_LABELS } from '@/api/modules/summary'
-import SummaryResult from './SummaryResult.vue'
+import { renderMarkdown } from '@/utils/markdown'
 import type { ISummaryItem, SummaryMode } from '@/types'
 
 const store = useSummaryStore()
@@ -15,6 +16,7 @@ const store = useSummaryStore()
 // ── 详情弹窗 ──
 const detailVisible = ref(false)
 const viewingSummaryId = ref<string | null>(null)
+const deletingId = ref<string | null>(null)  // 正在删除的记录 ID
 
 // ── 加载 ──
 onMounted(() => {
@@ -47,22 +49,14 @@ async function handleDelete(item: ISummaryItem) {
       '删除确认',
       { confirmButtonText: '确定删除', cancelButtonText: '取消', type: 'warning' },
     )
+    deletingId.value = item.id
     await store.removeSummary(item.id)
     ElMessage.success('已删除')
   } catch {
     // 用户取消
+  } finally {
+    deletingId.value = null
   }
-}
-
-/** 简易 Markdown → HTML */
-function renderMarkdown(text: string): string {
-  return text
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n- (.+)/g, '\n<li>$1</li>')
-    .replace(/\n/g, '<br/>')
 }
 
 /** 从原文中提取标题（取前30字作为摘要标题） */
@@ -158,9 +152,10 @@ const isEmpty = computed(
             text
             size="small"
             type="danger"
+            :loading="deletingId === item.id"
             @click="handleDelete(item)"
           >
-            <el-icon><Delete /></el-icon>
+            <el-icon v-if="deletingId !== item.id"><Delete /></el-icon>
           </el-button>
         </div>
       </div>

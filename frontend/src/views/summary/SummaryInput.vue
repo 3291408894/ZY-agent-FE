@@ -5,6 +5,7 @@
  */
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
+import { MagicStick } from '@element-plus/icons-vue'
 import { useSummaryStore } from '@/stores/summary'
 import { useSSE } from '@/composables/useSSE'
 import { getSummaryGenerateUrl, SUMMARY_MODE_LABELS, SUMMARY_MODE_DESCRIPTIONS } from '@/api/modules/summary'
@@ -12,7 +13,7 @@ import SummaryResult from './SummaryResult.vue'
 import type { SummaryMode } from '@/types'
 
 const store = useSummaryStore()
-const { isStreaming, connect, disconnect } = useSSE()
+const { connect, disconnect } = useSSE()
 
 // ── 表单状态 ──
 const inputText = ref('')
@@ -25,7 +26,7 @@ const isOverLimit = computed(() => charCount.value > 50000)
 const isTooShort = computed(() => charCount.value < 10)
 
 const canSubmit = computed(
-  () => !isStreaming.value && charCount.value >= 10 && !isOverLimit.value
+  () => !store.isStreaming && charCount.value >= 10 && !isOverLimit.value
 )
 
 // ── 发起总结 ──
@@ -112,7 +113,7 @@ function fillExample(text: string) {
         <span class="mode-selector__label">总结模式：</span>
         <el-radio-group
           v-model="selectedMode"
-          :disabled="isStreaming"
+          :disabled="store.isStreaming"
           @change="handleModeSelect"
         >
           <el-radio-button value="brief">
@@ -139,7 +140,7 @@ function fillExample(text: string) {
               text
               size="small"
               type="primary"
-              :disabled="isStreaming"
+              :disabled="store.isStreaming"
               @click="handleClear"
             >
               清空
@@ -150,7 +151,7 @@ function fillExample(text: string) {
           v-model="inputText"
           type="textarea"
           :rows="12"
-          :disabled="isStreaming"
+          :disabled="store.isStreaming"
           placeholder="请粘贴课文原文内容（最少 10 字）&#10;&#10;例如：晋太元中，武陵人捕鱼为业。缘溪行，忘路之远近……"
           class="text-input__textarea"
         />
@@ -173,14 +174,14 @@ function fillExample(text: string) {
           type="primary"
           size="large"
           :disabled="!canSubmit"
-          :loading="isStreaming"
+          :loading="store.isStreaming"
           @click="handleGenerate"
         >
-          <el-icon v-if="!isStreaming"><MagicStick /></el-icon>
-          {{ isStreaming ? '正在生成总结…' : '开始总结' }}
+          <el-icon v-if="!store.isStreaming"><MagicStick /></el-icon>
+          {{ store.isStreaming ? '正在生成总结…' : '开始总结' }}
         </el-button>
         <el-button
-          v-if="isStreaming"
+          v-if="store.isStreaming"
           type="danger"
           size="large"
           plain
@@ -197,9 +198,9 @@ function fillExample(text: string) {
           v-for="ex in examples"
           :key="ex.label"
           class="examples__tag"
-          :class="{ 'examples__tag--disabled': isStreaming }"
+          :class="{ 'examples__tag--disabled': store.isStreaming }"
           :disable-transitions="false"
-          @click="!isStreaming && fillExample(ex.text)"
+          @click="!store.isStreaming && fillExample(ex.text)"
         >
           {{ ex.label }}
         </el-tag>
