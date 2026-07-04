@@ -6,7 +6,6 @@
     "allowArbitraryExtensions": true,
 
     // 路径别名
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     },

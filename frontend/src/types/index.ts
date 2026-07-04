@@ -270,8 +270,17 @@ export interface IGraphEdge {
 export interface IKnowledgeGraph {
   graph_id: string
   title: string
+  source_type?: string
   nodes: IGraphNode[]
   edges: IGraphEdge[]
+}
+
+/** 图谱列表项 */
+export interface IKnowledgeGraphItem {
+  id: string
+  title: string
+  source_type: string
+  created_at: string
 }
 
 /** 知识节点详情 */
@@ -282,6 +291,13 @@ export interface IKnowledgeNode {
   examples: string[]
   common_mistakes: string[]
   related_nodes: Array<{ id: string; label: string; relation: string }>
+}
+
+/** 图谱生成参数 */
+export interface IGenerateGraphParams {
+  source_type: 'subject' | 'chapter' | 'file'
+  source: string
+  file_id?: string | null
 }
 
 // ================================================================
