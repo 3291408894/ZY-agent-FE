@@ -6,6 +6,7 @@
 
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Delete } from '@element-plus/icons-vue'
 import { useFileStore } from '@/stores/file'
 import {
   ALLOWED_EXTENSIONS,

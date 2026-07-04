@@ -68,10 +68,10 @@ const MOCK_GRAPH: IKnowledgeGraph = {
 }
 
 const MOCK_GRAPH_LIST: IKnowledgeGraphItem[] = [
-  { id: 'mock-graph-001', title: '七年级文言文知识图谱', source_type: 'subject', created_at: '2026-07-03T10:00:00Z' },
-  { id: 'mock-graph-002', title: '八年级数学-函数专题', source_type: 'chapter', created_at: '2026-07-02T14:30:00Z' },
-  { id: 'mock-graph-003', title: '英语七年级语法体系', source_type: 'subject', created_at: '2026-07-01T09:15:00Z' },
-  { id: 'mock-graph-004', title: '物理力学基础概念', source_type: 'chapter', created_at: '2026-06-28T16:45:00Z' },
+  { id: 'mock-graph-001', title: '七年级文言文知识图谱', source_type: 'subject', node_count: 12, edge_count: 15, created_at: '2026-07-03T10:00:00Z' },
+  { id: 'mock-graph-002', title: '八年级数学-函数专题', source_type: 'chapter', node_count: 8, edge_count: 10, created_at: '2026-07-02T14:30:00Z' },
+  { id: 'mock-graph-003', title: '英语七年级语法体系', source_type: 'subject', node_count: 15, edge_count: 20, created_at: '2026-07-01T09:15:00Z' },
+  { id: 'mock-graph-004', title: '物理力学基础概念', source_type: 'chapter', node_count: 10, edge_count: 12, created_at: '2026-06-28T16:45:00Z' },
 ]
 
 const MOCK_NODE_DETAILS: Record<string, IKnowledgeNode> = {
@@ -213,7 +213,7 @@ export function useKnowledge() {
     try {
       if (useMock()) {
         await delay(1500)
-        currentGraph.value = {
+        const newGraph: IKnowledgeGraph = {
           ...MOCK_GRAPH,
           graph_id: 'mock-graph-' + Date.now(),
           title: params.source + ' 知识图谱',
@@ -221,10 +221,13 @@ export function useKnowledge() {
           nodes: [...MOCK_NODES],
           edges: [...MOCK_EDGES],
         }
+        currentGraph.value = newGraph
         graphList.value.unshift({
-          id: currentGraph.value.graph_id,
-          title: currentGraph.value.title,
+          id: newGraph.graph_id,
+          title: newGraph.title,
           source_type: params.source_type,
+          node_count: MOCK_NODES.length,
+          edge_count: MOCK_EDGES.length,
           created_at: new Date().toISOString(),
         })
         return

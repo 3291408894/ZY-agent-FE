@@ -7,6 +7,7 @@
 
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { UserFilled } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getProfile, updateProfile } from '@/api/modules/auth'

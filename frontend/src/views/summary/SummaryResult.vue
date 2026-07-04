@@ -45,7 +45,7 @@ async function handleCopy() {
     document.body.appendChild(textarea)
     textarea.select()
     try {
-      // @ts-expect-error execCommand is deprecated but still the only fallback
+      // execCommand is deprecated but still the only fallback for clipboard
       document.execCommand('copy')
       ElMessage.success('已复制到剪贴板')
     } catch {
