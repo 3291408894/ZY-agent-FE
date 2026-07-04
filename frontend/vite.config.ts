@@ -21,7 +21,7 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       scss: {
-        additionalData: `@use "@/assets/styles/variables.scss" as *;`,
+        // CSS 变量已通过 main.ts 全局导入，无需 SCSS 变量注入
       },
     },
   },
