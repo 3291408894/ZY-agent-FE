@@ -51,7 +51,6 @@ const navItems: NavItem[] = [
     title: '文件管理',
     icon: 'FolderOpened',
     pbi: 'PBI_05',
-    upcoming: true,
   },
   {
     path: '/knowledge',

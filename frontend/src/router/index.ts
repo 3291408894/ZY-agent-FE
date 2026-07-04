@@ -88,7 +88,6 @@ const routes: RouteRecordRaw[] = [
       title: '文件管理 - 智翼',
       requiresAuth: true,
       icon: 'FolderOpened',
-      upcoming: true,
     },
   },
   {
