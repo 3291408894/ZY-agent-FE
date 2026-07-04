@@ -1,200 +1,36 @@
-// ================================================================
-// 智翼 (ZhiYi) — 全局样式
-// 导入顺序：variables → mixins → global (本文件)
-// ================================================================
+// ════════════════════════════════════════════════════
+// 智翼平台 — 全局样式 Reset
+// ════════════════════════════════════════════════════
 
-@use './variables.scss';
-@use './mixins.scss';
-
-// ── CSS Reset ──
-*,
-*::before,
-*::after {
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
 html {
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-base, 15px);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
 }
 
 body {
-  font-family: var(--font-family-base);
-  font-size: var(--font-size-base);
-  line-height: var(--line-height-base);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
   color: var(--color-text);
-  background-color: var(--color-bg);
-  @include mixins.scrollbar(6px);
-  min-height: 100vh;
+  background: var(--color-bg);
+  line-height: 1.6;
 }
 
-// ── 链接 ──
 a {
   color: var(--color-primary);
   text-decoration: none;
-  transition: color var(--transition-fast);
-
-  &:hover {
-    color: var(--color-primary-dark);
-  }
 }
 
-// ── 标题 ──
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  color: var(--color-text-primary);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--line-height-heading);
+::-webkit-scrollbar {
+  width: 6px;
 }
-
-h1 {
-  font-size: var(--font-size-h1);
-}
-h2 {
-  font-size: var(--font-size-h2);
-}
-h3 {
-  font-size: var(--font-size-h3);
-}
-
-// ── 图片 ──
-img {
-  max-width: 100%;
-  height: auto;
-  display: block;
-}
-
-// ── 列表 ──
-ul,
-ol {
-  list-style: none;
-}
-
-// ── 输入框 ──
-input,
-textarea,
-select,
-button {
-  font-family: inherit;
-  font-size: inherit;
-  border: none;
-  outline: none;
-  background: none;
-}
-
-// ── 选中颜色 ──
-::selection {
-  background: var(--color-primary-light);
-  color: var(--color-primary-darkest);
-}
-
-// ── 通用页面容器 ──
-.page-container {
-  max-width: var(--content-max-width);
-  margin: 0 auto;
-  padding: var(--page-padding);
-}
-
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--spacing-xl);
-
-  &__title {
-    font-size: var(--font-size-h2);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
-  }
-
-  &__subtitle {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-secondary);
-    margin-top: var(--spacing-xs);
-  }
-}
-
-// ── 通用卡片 ──
-.card {
-  @include mixins.card;
-  padding: var(--spacing-xl);
-}
-
-.card-hover {
-  @include mixins.card-hover;
-  padding: var(--spacing-xl);
-}
-
-// ── 通用空状态 ──
-.empty-state {
-  @include mixins.flex-center;
-  flex-direction: column;
-  padding: var(--spacing-xxxl) var(--spacing-xl);
-  color: var(--color-text-secondary);
-
-  &__icon {
-    font-size: 48px;
-    margin-bottom: var(--spacing-base);
-    opacity: 0.4;
-  }
-
-  &__text {
-    font-size: var(--font-size-base);
-  }
-}
-
-// ── 过渡动画辅助类 ──
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity var(--transition-base);
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-.slide-enter-active,
-.slide-leave-active {
-  transition: transform var(--transition-base), opacity var(--transition-base);
-}
-.slide-enter-from {
-  transform: translateY(8px);
-  opacity: 0;
-}
-.slide-leave-to {
-  transform: translateY(-8px);
-  opacity: 0;
-}
-
-// ── 响应式调整 ──
-@include mixins.respond-down('md') {
-  :root {
-    --page-padding: var(--spacing-base);
-    --sidebar-width: 0px; // 移动端侧边栏默认隐藏
-  }
-
-  .page-container {
-    padding: var(--spacing-base);
-  }
-
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-sm);
-  }
-}
-
-@include mixins.respond-down('sm') {
-  :root {
-    --spacing-xl: 16px;
-    --spacing-xxl: 20px;
-  }
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
 }

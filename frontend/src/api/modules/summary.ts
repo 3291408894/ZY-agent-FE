@@ -1,26 +1,57 @@
-// ================================================================
-// 智翼 (ZhiYi) — 课文总结模块 API
-// 对应 PBI_06 接口
-// ================================================================
+/** 课文总结模块 — API 请求层 (PBI_06) */
 
-import { get, del } from '../request'
-import type { IPaginationParams } from '../types'
-import type { ISummaryRecord } from '@/types'
+import { get, post, del } from '../request'
+import type {
+  IApiResponse,
+  IPaginatedData,
+  ISummaryItem,
+  ISummaryDetail,
+  ISummaryListQuery,
+  SummaryMode,
+} from '@/types'
 
-/** 获取总结历史列表 */
-export function getSummaryHistory(params?: IPaginationParams) {
-  return get<ISummaryRecord[]>('/api/v1/summaries', params)
+/**
+ * 获取历史总结列表（分页）
+ * GET /api/v1/summaries
+ */
+export function getSummaryList(params: ISummaryListQuery) {
+  return get<IPaginatedData<ISummaryItem>>('/api/v1/summaries', params)
 }
 
-/** 查看总结详情 */
+/**
+ * 查看单条总结详情
+ * GET /api/v1/summaries/{id}
+ */
 export function getSummaryDetail(id: string) {
-  return get<ISummaryRecord>(`/api/v1/summaries/${id}`)
+  return get<ISummaryDetail>(`/api/v1/summaries/${id}`)
 }
 
-/** 删除总结记录 */
+/**
+ * 删除总结记录
+ * DELETE /api/v1/summaries/{id}
+ */
 export function deleteSummary(id: string) {
-  return del(`/api/v1/summaries/${id}`)
+  return del<{ code: number; message: string }>(`/api/v1/summaries/${id}`)
 }
 
-// 注意：POST /summaries/generate 使用 SSE 流式传输
-// 请使用 useSSE() composable 发起请求
+/**
+ * 获取 SSE 流式接口的完整 URL
+ * （供 useSSE composable 使用）
+ */
+export function getSummaryGenerateUrl(): string {
+  const baseURL = import.meta.env.VITE_API_BASE_URL || ''
+  return `${baseURL}/api/v1/summaries/generate`
+}
+
+/**
+ * 简易模式标签映射
+ */
+export const SUMMARY_MODE_LABELS: Record<SummaryMode, string> = {
+  brief: '精简版',
+  detailed: '详细版',
+}
+
+export const SUMMARY_MODE_DESCRIPTIONS: Record<SummaryMode, string> = {
+  brief: '包含全文主旨 + 段落概要',
+  detailed: '包含主旨 + 段落精析 + 考点 + 写作手法 + 学习启示',
+}
