@@ -77,7 +77,6 @@ const routes: RouteRecordRaw[] = [
       title: '习题练习 - 智翼',
       requiresAuth: true,
       icon: 'EditPen',
-      upcoming: true,
     },
   },
   {
