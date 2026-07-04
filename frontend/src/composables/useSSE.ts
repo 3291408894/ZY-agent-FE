@@ -27,6 +27,8 @@ export interface SSEOptions {
   onError?: (error: string) => void
   /** 接收到 progress 事件时的回调 */
   onProgress?: (data: SSEMessage) => void
+  /** 接收到 exercise 事件时的回调（PBI_08: 习题逐题生成） */
+  onExercise?: (data: SSEMessage) => void
 }
 
 export function useSSE() {
@@ -97,6 +99,10 @@ export function useSSE() {
                   break
                 case 'progress':
                   options.onProgress?.(data)
+                  break
+                case 'exercise':
+                  // PBI_08: 逐题生成
+                  options.onExercise?.(data)
                   break
                 case 'done':
                   options.onDone?.(data)
