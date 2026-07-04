@@ -8,6 +8,7 @@ import type { IDashboardData } from '@/types'
 const router = useRouter()
 const userStore = useUserStore()
 const loading = ref(true)
+const error = ref(false)
 const data = ref<IDashboardData | null>(null)
 
 const shortcuts = [
@@ -22,10 +23,15 @@ function fmtTime(s: number) {
   return h > 0 ? `${h} 小时 ${m} 分钟` : `${m} 分钟`
 }
 
-onMounted(async () => {
-  try { data.value = await getDashboard() } catch { /* empty state */ }
+async function loadDashboard() {
+  error.value = false
+  loading.value = true
+  try { data.value = await getDashboard() }
+  catch { error.value = true }
   finally { loading.value = false }
-})
+}
+
+onMounted(() => { loadDashboard() })
 </script>
 
 <template>
@@ -48,21 +54,30 @@ onMounted(async () => {
 
     <h2 class="section-title">学习概览</h2>
     <div class="stats-row" v-loading="loading">
-      <div class="stat-card card">
-        <div class="stat-card__icon" style="background:var(--color-primary-light);color:var(--color-primary)"><el-icon :size="24"><Timer /></el-icon></div>
-        <div class="stat-card__val">{{ data ? fmtTime(data.total_study_time) : '--' }}</div>
-        <div class="stat-card__lbl">累计学习时长</div>
-      </div>
-      <div class="stat-card card">
-        <div class="stat-card__icon" style="background:var(--color-warning-light);color:var(--color-warning)"><el-icon :size="24"><EditPen /></el-icon></div>
-        <div class="stat-card__val">{{ data ? data.total_exercises + ' 题' : '--' }}</div>
-        <div class="stat-card__lbl">累计做题数</div>
-      </div>
-      <div class="stat-card card">
-        <div class="stat-card__icon" style="background:var(--color-success-light);color:var(--color-success)"><el-icon :size="24"><CircleCheck /></el-icon></div>
-        <div class="stat-card__val">{{ data ? (data.correct_rate * 100).toFixed(0) + '%' : '--' }}</div>
-        <div class="stat-card__lbl">正确率</div>
-      </div>
+      <template v-if="error">
+        <div class="stats-error card">
+          <el-icon :size="40" style="color:var(--color-info);margin-bottom:var(--spacing-base)"><WarningFilled /></el-icon>
+          <p>数据加载失败，请检查网络后刷新重试</p>
+          <el-button type="primary" size="small" style="margin-top:var(--spacing-base)" @click="loadDashboard">重新加载</el-button>
+        </div>
+      </template>
+      <template v-else>
+        <div class="stat-card card">
+          <div class="stat-card__icon" style="background:var(--color-primary-light);color:var(--color-primary)"><el-icon :size="24"><Timer /></el-icon></div>
+          <div class="stat-card__val">{{ data ? fmtTime(data.total_study_time) : '--' }}</div>
+          <div class="stat-card__lbl">累计学习时长</div>
+        </div>
+        <div class="stat-card card">
+          <div class="stat-card__icon" style="background:var(--color-warning-light);color:var(--color-warning)"><el-icon :size="24"><EditPen /></el-icon></div>
+          <div class="stat-card__val">{{ data ? data.total_exercises + ' 题' : '--' }}</div>
+          <div class="stat-card__lbl">累计做题数</div>
+        </div>
+        <div class="stat-card card">
+          <div class="stat-card__icon" style="background:var(--color-success-light);color:var(--color-success)"><el-icon :size="24"><CircleCheck /></el-icon></div>
+          <div class="stat-card__val">{{ data ? (data.correct_rate * 100).toFixed(0) + '%' : '--' }}</div>
+          <div class="stat-card__lbl">正确率</div>
+        </div>
+      </template>
     </div>
 
     <div v-if="data?.weak_points?.length" style="margin-top:var(--spacing-xl)">
@@ -90,6 +105,7 @@ onMounted(async () => {
   &__label { font-size:var(--font-size-base); font-weight:var(--font-weight-medium); color:var(--color-text-primary); }
 }
 .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--spacing-base); margin-top:var(--spacing-base); }
+.stats-error { grid-column:1/-1; text-align:center; padding:var(--spacing-xxl); color:var(--color-text-secondary); }
 .stat-card { text-align:center; padding:var(--spacing-xl);
   &__icon { width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto var(--spacing-md); }
   &__val { font-size:var(--font-size-xxl); font-weight:var(--font-weight-bold); color:var(--color-text-primary); }

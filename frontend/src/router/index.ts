@@ -13,6 +13,7 @@ const SummaryView = () => import('@/views/summary/SummaryView.vue')
 const ExerciseView = () => import('@/views/exercise/ExerciseView.vue')
 const FilesView = () => import('@/views/files/FilesView.vue')
 const KnowledgeView = () => import('@/views/knowledge/KnowledgeView.vue')
+const NotFoundView = () => import('@/views/NotFoundView.vue')
 
 // ── 路由表 ──
 const routes: RouteRecordRaw[] = [
@@ -74,17 +75,18 @@ const routes: RouteRecordRaw[] = [
     meta: { layout: 'default', requiresAuth: true },
   },
 
-  // 默认重定向
+  // 默认重定向 → 启动即进登录页
   {
     path: '/',
-    redirect: '/dashboard',
+    redirect: '/login',
   },
 
   // 404
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
-    redirect: '/dashboard',
+    component: NotFoundView,
+    meta: { layout: 'fullscreen', guest: true },
   },
 ]
 
@@ -103,12 +105,6 @@ router.beforeEach((to, _from, next) => {
   // 需要登录的页面
   if (to.meta.requiresAuth && !token) {
     next({ name: 'Login', query: { redirect: to.fullPath } })
-    return
-  }
-
-  // 已登录访问认证页 → 重定向
-  if (to.meta.guest && token) {
-    next({ name: 'Dashboard' })
     return
   }
 
