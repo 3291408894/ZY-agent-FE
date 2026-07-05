@@ -42,7 +42,15 @@ request.interceptors.response.use(
       ElMessage.error('无权访问该资源')
     } else if (!error.config?.url?.includes('/summaries/generate')) {
       // SSE 接口的错误在 useSSE 中处理，不出全局弹窗
-      ElMessage.error(error.response?.data?.message || error.message || '网络错误')
+      if (error.response) {
+        // 服务端返回了 HTTP 错误
+        ElMessage.error(error.response.data?.message || `请求失败 (${error.response.status})`)
+      } else if (error.code === 'ECONNABORTED') {
+        ElMessage.error('请求超时，请稍后重试')
+      } else {
+        // 无响应 = 网络不通或后端未启动
+        ElMessage.error('无法连接到服务器，请确认后端服务已启动')
+      }
     }
     return Promise.reject(error)
   },

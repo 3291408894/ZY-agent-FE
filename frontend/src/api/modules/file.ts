@@ -3,10 +3,9 @@
 // 对应 PBI_05 接口
 // ================================================================
 
-import { get, post, del } from '../request'
-import type { IPaginationParams, IPaginatedData } from '../types'
+import request, { get, post, del } from '../request'
+import type { IPaginatedData } from '../types'
 import type { IUploadedFile, FileType, ParseStatus } from '@/types'
-import axios from 'axios'
 
 // ================================================================
 // 错误码常量
@@ -263,19 +262,15 @@ export async function uploadFile(
     return newFile
   }
 
-  // ── 真实模式：axios 上传 ──
+  // ── 真实模式：通过 request 实例上传（走 Vite 代理 + 拦截器）──
   const formData = new FormData()
   formData.append('file', file)
   formData.append('auto_parse', String(autoParse))
 
-  const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-  const token = localStorage.getItem('access_token')
-
-  return axios
-    .post<IUploadedFile>(`${baseURL}/api/v1/files/upload`, formData, {
+  return request
+    .post('/api/v1/files/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       onUploadProgress: (progressEvent) => {
         if (progressEvent.total && onProgress) {
@@ -284,13 +279,15 @@ export async function uploadFile(
         }
       },
     })
-    .then((res) => {
-      const body = res.data as any
-      if (body.code !== undefined && body.code !== 0) {
-        const err = new Error(body.message || '上传失败')
-        ;(err as any).code = body.code ?? FileErrorCode.INTERNAL_ERROR
-        throw err
+    .then((data) => {
+      // request 响应拦截器已解包：code===0 时返回 body.data
+      return data as unknown as IUploadedFile
+    })
+    .catch((err) => {
+      // 网络错误添加明确 code，让 getErrorMsg 正确翻译
+      if (!err.code && !err.response) {
+        ;(err as any).code = FileErrorCode.NETWORK_ERROR
       }
-      return (body.data ?? body) as IUploadedFile
+      throw err
     })
 }

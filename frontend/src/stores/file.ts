@@ -113,9 +113,8 @@ export const useFileStore = defineStore('file', () => {
       // 刷新列表
       await fetchFiles()
       return result
-    } catch (err: any) {
-      const code = err?.code ?? -1
-      ElMessage.error(getErrorMsg(code))
+    } catch (_err: any) {
+      // 拦截器已统一弹窗处理错误，这里不再重复提示
       return null
     } finally {
       uploading.value = false
