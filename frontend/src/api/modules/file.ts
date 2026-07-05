@@ -269,9 +269,7 @@ export async function uploadFile(
 
   return request
     .post('/api/v1/files/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      // ⚠️ 不手动设置 Content-Type，让 axios 自动添加 boundary
       onUploadProgress: (progressEvent) => {
         if (progressEvent.total && onProgress) {
           const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total)
