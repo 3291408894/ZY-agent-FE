@@ -143,3 +143,4 @@ function loadColorScheme(): ColorScheme {
   }
   return 'eye-care'
 }
+
