@@ -23,14 +23,6 @@ body {
   transition: background 0.3s ease, color 0.3s ease;
 }
 
-// ═══════════════════════════════════════
-// 蓝光过滤层 — 覆盖整个应用
-// ═══════════════════════════════════════
-#app {
-  filter: var(--blue-light-filter, none);
-  transition: filter 0.4s ease;
-}
-
 a {
   color: var(--color-primary);
   text-decoration: none;
@@ -42,23 +34,4 @@ a {
 ::-webkit-scrollbar-thumb {
   background: var(--color-border);
   border-radius: 3px;
-}
-
-// ═══════════════════════════════════════
-// 阅读模式 — 隐藏非必要 UI 元素
-// ═══════════════════════════════════════
-[data-reading-mode='true'] {
-  .app-header,
-  .app-sidebar,
-  .app-footer {
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-  }
-
-  // 鼠标移到顶部时显示 header
-  .app-header:hover {
-    opacity: 1;
-    pointer-events: auto;
-  }
 }

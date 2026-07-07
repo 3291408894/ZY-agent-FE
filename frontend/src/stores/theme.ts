@@ -27,7 +27,6 @@ const STORAGE_KEYS = {
   fontSize: 'zhiyi-font-size',
   themeMode: 'zhiyi-theme-mode',
   colorScheme: 'zhiyi-color-scheme',
-  readingMode: 'zhiyi-reading-mode',
 } as const
 
 export const useThemeStore = defineStore('theme', () => {
@@ -37,7 +36,6 @@ export const useThemeStore = defineStore('theme', () => {
   const fontSizeLevel = ref<FontSizeLevel>(loadFontSize())
   const themeMode = ref<ThemeMode>(loadThemeMode())
   const colorScheme = ref<ColorScheme>(loadColorScheme())
-  const readingMode = ref<boolean>(loadReadingMode())
 
   // ================================================================
   // Getters
@@ -87,19 +85,6 @@ export const useThemeStore = defineStore('theme', () => {
   }
 
   // ================================================================
-  // Actions — 阅读模式
-  // ================================================================
-  function setReadingMode(enabled: boolean) {
-    readingMode.value = enabled
-    document.documentElement.setAttribute('data-reading-mode', String(enabled))
-    localStorage.setItem(STORAGE_KEYS.readingMode, String(enabled))
-  }
-
-  function toggleReadingMode() {
-    setReadingMode(!readingMode.value)
-  }
-
-  // ================================================================
   // 初始化：从 localStorage 恢复并应用到 DOM
   // ================================================================
   function init() {
@@ -112,10 +97,6 @@ export const useThemeStore = defineStore('theme', () => {
       'data-color-scheme',
       colorScheme.value
     )
-    document.documentElement.setAttribute(
-      'data-reading-mode',
-      String(readingMode.value)
-    )
   }
 
   return {
@@ -123,7 +104,6 @@ export const useThemeStore = defineStore('theme', () => {
     fontSizeLevel,
     themeMode,
     colorScheme,
-    readingMode,
     // getters (as functions for reactivity)
     currentFontSize,
     isDark,
@@ -133,8 +113,6 @@ export const useThemeStore = defineStore('theme', () => {
     setThemeMode,
     toggleThemeMode,
     setColorScheme,
-    setReadingMode,
-    toggleReadingMode,
     init,
   }
 })
@@ -166,7 +144,3 @@ function loadColorScheme(): ColorScheme {
   return 'eye-care'
 }
 
-function loadReadingMode(): boolean {
-  const stored = localStorage.getItem(STORAGE_KEYS.readingMode)
-  return stored === 'true'
-}

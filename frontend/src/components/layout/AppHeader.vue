@@ -136,19 +136,6 @@ defineProps<{
         </button>
       </el-tooltip>
 
-      <!-- 阅读模式 -->
-      <el-tooltip :content="themeStore.readingMode ? '退出阅读模式' : '阅读模式'" placement="bottom">
-        <button
-          class="toolbar-btn"
-          :class="{ 'toolbar-btn--active': themeStore.readingMode }"
-          @click="themeStore.toggleReadingMode()"
-        >
-          <el-icon :size="18">
-            <Reading />
-          </el-icon>
-        </button>
-      </el-tooltip>
-
       <el-divider direction="vertical" />
 
       <!-- 用户头像 & 下拉菜单 -->
