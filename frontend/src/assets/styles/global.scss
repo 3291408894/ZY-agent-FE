@@ -12,6 +12,7 @@ html {
   font-size: var(--font-size-base, 15px);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: font-size 0.25s ease;
 }
 
 body {
@@ -20,7 +21,14 @@ body {
   color: var(--color-text);
   background: var(--color-bg);
   line-height: var(--line-height-base, 1.6);
-  transition: background 0.3s ease, color 0.3s ease;
+  transition: background 0.3s ease, color 0.3s ease, font-size 0.25s ease;
+}
+
+// 关键元素跟随字号过渡
+p, span, div, li, td, th, button, a, input, textarea, select, label,
+.el-button, .el-menu-item, .el-dropdown-menu__item,
+.el-table, .el-input__inner, .el-textarea__inner {
+  transition: font-size 0.25s ease;
 }
 
 // ═══════════════════════════════════════

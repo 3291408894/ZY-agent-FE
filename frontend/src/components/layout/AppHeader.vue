@@ -11,14 +11,27 @@ import { UserFilled } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useThemeStore } from '@/stores/theme'
 import { useTheme } from '@/composables/useTheme'
-import { useFontSize, FONT_SIZE_OPTIONS } from '@/composables/useFontSize'
+import { useFontSize, FONT_PRESETS } from '@/composables/useFontSize'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 const themeStore = useThemeStore()
 const { isDark, toggleMode, modeLabel } = useTheme()
-const { currentLevel, setFontSize, increase, decrease } = useFontSize()
+const { currentPx, currentPercent, sizeLabel, canDecrease, canIncrease, isDefault, presets, setFontSize, increase, decrease, reset } = useFontSize()
+
+// ── 字体弹窗 ──
+const fontSizePopoverVisible = ref(false)
+const fontSizeSliderValue = ref(currentPx.value)
+
+function onSliderInput(val: number) {
+  fontSizeSliderValue.value = val
+  setFontSize(val)
+}
+
+function onPopoverShow() {
+  fontSizeSliderValue.value = currentPx.value
+}
 
 // ── 用户下拉菜单 ──
 const userMenuVisible = ref(false)
@@ -79,41 +92,76 @@ defineProps<{
 
     <!-- ── 右侧：工具栏 ── -->
     <div class="app-header__right">
-      <!-- 字体调节 (PBI_03) -->
-      <div class="app-header__toolbar">
-        <el-tooltip content="缩小字体" placement="bottom">
-          <button class="toolbar-btn" :disabled="currentLevel === 'small'" @click="decrease">
-            <el-icon :size="16"><ZoomOut /></el-icon>
-          </button>
-        </el-tooltip>
+      <!-- 字体调节 — 滑条无级缩放 -->
+      <el-popover
+        v-model:visible="fontSizePopoverVisible"
+        trigger="click"
+        placement="bottom"
+        :width="280"
+        @show="onPopoverShow"
+      >
+        <template #reference>
+          <el-tooltip :content="`字体大小：${sizeLabel}（点击调节）`" placement="bottom">
+            <button class="toolbar-btn toolbar-btn--font" aria-label="字体大小调节">
+              <el-icon :size="16"><ZoomIn /></el-icon>
+              <span class="font-size-badge">{{ currentPercent }}%</span>
+            </button>
+          </el-tooltip>
+        </template>
 
-        <el-dropdown trigger="click" @command="setFontSize">
-          <button class="toolbar-btn toolbar-btn--text">
-            {{ FONT_SIZE_OPTIONS.find((o) => o.value === currentLevel)?.label ?? '中' }}
-          </button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item
-                v-for="opt in FONT_SIZE_OPTIONS"
-                :key="opt.value"
-                :command="opt.value"
-                :class="{ 'is-active': currentLevel === opt.value }"
-              >
-                <div class="font-size-option">
-                  <span class="font-size-option__label">{{ opt.label }}</span>
-                  <span class="font-size-option__desc">{{ opt.description }}</span>
-                </div>
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        <!-- 弹出内容 -->
+        <div class="font-size-popover">
+          <div class="font-size-popover__header">
+            <span>字体大小</span>
+            <span class="font-size-popover__value">{{ sizeLabel }}</span>
+          </div>
 
-        <el-tooltip content="放大字体" placement="bottom">
-          <button class="toolbar-btn" :disabled="currentLevel === 'large'" @click="increase">
-            <el-icon :size="16"><ZoomIn /></el-icon>
-          </button>
-        </el-tooltip>
-      </div>
+          <!-- 滑条 -->
+          <div class="font-size-popover__slider">
+            <span class="font-size-popover__label">A</span>
+            <el-slider
+              v-model="fontSizeSliderValue"
+              :min="12"
+              :max="20"
+              :step="1"
+              :show-tooltip="true"
+              :marks="{ 12: '12', 15: '15', 18: '18', 20: '20' }"
+              @input="onSliderInput"
+            />
+            <span class="font-size-popover__label font-size-popover__label--large">A</span>
+          </div>
+
+          <!-- 预设 -->
+          <div class="font-size-popover__presets">
+            <el-button
+              v-for="p in presets"
+              :key="p.value"
+              :type="currentPx === p.value ? 'primary' : 'default'"
+              size="small"
+              @click="setFontSize(p.value)"
+            >
+              {{ p.label }} ({{ p.value }}px)
+            </el-button>
+          </div>
+
+          <!-- 操作行 -->
+          <div class="font-size-popover__actions">
+            <el-button :disabled="!canDecrease" size="small" @click="decrease">
+              <el-icon><ZoomOut /></el-icon>
+            </el-button>
+            <el-button :disabled="!canIncrease" size="small" @click="increase">
+              <el-icon><ZoomIn /></el-icon>
+            </el-button>
+            <el-button :disabled="isDefault" size="small" @click="reset">
+              恢复默认
+            </el-button>
+          </div>
+
+          <div class="font-size-popover__hint">
+            提示：<kbd>Ctrl</kbd> + <kbd>+</kbd> / <kbd>-</kbd> / <kbd>0</kbd> 快捷调节
+          </div>
+        </div>
+      </el-popover>
 
       <el-divider direction="vertical" />
 
@@ -335,17 +383,87 @@ defineProps<{
     color: var(--color-primary);
     background: var(--color-primary-lighter);
   }
+
+  &--font {
+    gap: 4px;
+    min-width: auto;
+    padding: 0 6px;
+
+    .font-size-badge {
+      font-size: 10px;
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-primary);
+      background: var(--color-primary-lighter);
+      border-radius: 8px;
+      padding: 0 5px;
+      line-height: 16px;
+      min-width: 30px;
+      text-align: center;
+    }
+  }
 }
 
-// ── 字体选项下拉 ──
-.font-size-option {
-  &__label {
-    font-weight: var(--font-weight-medium);
-    margin-right: var(--spacing-sm);
-  }
-  &__desc {
-    font-size: var(--font-size-xs);
+// ── 字体调节弹窗 ──
+.font-size-popover {
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+    font-size: var(--font-size-sm);
     color: var(--color-text-secondary);
+  }
+
+  &__value {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-primary);
+    font-size: var(--font-size-base);
+  }
+
+  &__slider {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    padding: 0 4px;
+  }
+
+  &__label {
+    font-size: 13px;
+    color: var(--color-text-placeholder);
+    flex-shrink: 0;
+
+    &--large {
+      font-size: 18px;
+    }
+  }
+
+  &__presets {
+    display: flex;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  &__hint {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-placeholder);
+    border-top: 1px solid var(--color-border-lighter);
+    padding-top: var(--spacing-sm);
+
+    kbd {
+      font-family: var(--font-family-code);
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border-light);
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-size: 11px;
+    }
   }
 }
 

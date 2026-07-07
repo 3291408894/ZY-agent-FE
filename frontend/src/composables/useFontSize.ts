@@ -1,71 +1,83 @@
 // ================================================================
 // 智翼 (ZhiYi) — 字体调节组合式函数
-// 对应 PBI_03 验收条件 2：字体三档可调
+// 无级连续调节 12px-20px，支持键盘快捷键
 // ================================================================
 
-import { computed } from 'vue'
-import { useThemeStore, type FontSizeLevel } from '@/stores/theme'
+import { computed, onMounted, onUnmounted } from 'vue'
+import {
+  useThemeStore,
+  FONT_SIZE_MIN,
+  FONT_SIZE_MAX,
+  FONT_SIZE_DEFAULT,
+  FONT_PRESETS,
+} from '@/stores/theme'
 
-/** 字体大小选项（供下拉菜单使用） */
-export interface FontSizeOption {
-  label: string
-  value: FontSizeLevel
-  description: string
-}
-
-export const FONT_SIZE_OPTIONS: FontSizeOption[] = [
-  { label: '小', value: 'small', description: '适合高密度信息浏览' },
-  { label: '中', value: 'medium', description: '默认字号，推荐日常使用' },
-  { label: '大', value: 'large', description: '适合长时间阅读，减缓眼疲劳' },
-]
+export { FONT_PRESETS, FONT_SIZE_MIN, FONT_SIZE_MAX, FONT_SIZE_DEFAULT }
 
 export function useFontSize() {
   const themeStore = useThemeStore()
 
-  /** 当前档位 */
-  const currentLevel = computed(() => themeStore.fontSizeLevel)
+  const currentPx = computed(() => themeStore.fontSize)
+  const currentPercent = computed(() => themeStore.fontSizePercent)
+  const canDecrease = computed(() => currentPx.value > FONT_SIZE_MIN)
+  const canIncrease = computed(() => currentPx.value < FONT_SIZE_MAX)
+  const isDefault = computed(() => currentPx.value === FONT_SIZE_DEFAULT)
 
-  /** 当前档位标签 */
-  const currentLabel = computed(() => {
-    const opt = FONT_SIZE_OPTIONS.find((o) => o.value === currentLevel.value)
-    return opt?.label ?? '中'
+  /** 当前字号标签（如 "15px / 100%"） */
+  const sizeLabel = computed(() => `${currentPx.value}px (${currentPercent.value}%)`)
+
+  function setFontSize(px: number) {
+    themeStore.setFontSize(px)
+  }
+
+  function increase() {
+    themeStore.increaseFontSize()
+  }
+
+  function decrease() {
+    themeStore.decreaseFontSize()
+  }
+
+  function reset() {
+    themeStore.resetFontSize()
+  }
+
+  // ── 键盘快捷键 Ctrl+Plus / Ctrl+Minus / Ctrl+0 ──
+
+  function onKeyDown(e: KeyboardEvent) {
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === '=' || e.key === '+') {
+        e.preventDefault()
+        increase()
+      } else if (e.key === '-') {
+        e.preventDefault()
+        decrease()
+      } else if (e.key === '0') {
+        e.preventDefault()
+        reset()
+      }
+    }
+  }
+
+  onMounted(() => {
+    window.addEventListener('keydown', onKeyDown)
   })
 
-  /** 设置字体大小 */
-  function setFontSize(level: FontSizeLevel) {
-    themeStore.setFontSize(level)
-  }
-
-  /** 循环切换（小 → 中 → 大 → 小） */
-  function cycleFontSize() {
-    themeStore.cycleFontSize()
-  }
-
-  /** 放大一档 */
-  function increase() {
-    const levels: FontSizeLevel[] = ['small', 'medium', 'large']
-    const idx = levels.indexOf(currentLevel.value)
-    if (idx < levels.length - 1) {
-      setFontSize(levels[idx + 1])
-    }
-  }
-
-  /** 缩小一档 */
-  function decrease() {
-    const levels: FontSizeLevel[] = ['small', 'medium', 'large']
-    const idx = levels.indexOf(currentLevel.value)
-    if (idx > 0) {
-      setFontSize(levels[idx - 1])
-    }
-  }
+  onUnmounted(() => {
+    window.removeEventListener('keydown', onKeyDown)
+  })
 
   return {
-    currentLevel,
-    currentLabel,
-    options: FONT_SIZE_OPTIONS,
+    currentPx,
+    currentPercent,
+    sizeLabel,
+    canDecrease,
+    canIncrease,
+    isDefault,
+    presets: FONT_PRESETS,
     setFontSize,
-    cycleFontSize,
     increase,
     decrease,
+    reset,
   }
 }
