@@ -117,12 +117,34 @@ defineProps<{
 
       <el-divider direction="vertical" />
 
-      <!-- 主题切换 -->
+      <!-- 配色方案切换 (护眼/经典) -->
+      <el-tooltip :content="themeStore.colorScheme === 'eye-care' ? '当前：护眼配色' : '当前：经典配色'" placement="bottom">
+        <button class="toolbar-btn" @click="themeStore.setColorScheme(themeStore.colorScheme === 'eye-care' ? 'classic' : 'eye-care')">
+          <el-icon :size="18" :color="themeStore.colorScheme === 'eye-care' ? '#5B9BD5' : '#409EFF'">
+            <View />
+          </el-icon>
+        </button>
+      </el-tooltip>
+
+      <!-- 亮色/暗色切换 -->
       <el-tooltip :content="modeLabel" placement="bottom">
         <button class="toolbar-btn" @click="toggleMode">
           <el-icon :size="18">
             <Sunny v-if="isDark" />
             <Moon v-else />
+          </el-icon>
+        </button>
+      </el-tooltip>
+
+      <!-- 阅读模式 -->
+      <el-tooltip :content="themeStore.readingMode ? '退出阅读模式' : '阅读模式'" placement="bottom">
+        <button
+          class="toolbar-btn"
+          :class="{ 'toolbar-btn--active': themeStore.readingMode }"
+          @click="themeStore.toggleReadingMode()"
+        >
+          <el-icon :size="18">
+            <Reading />
           </el-icon>
         </button>
       </el-tooltip>
@@ -307,6 +329,11 @@ defineProps<{
     font-size: var(--font-size-xs);
     font-weight: var(--font-weight-medium);
     min-width: 24px;
+  }
+
+  &--active {
+    color: var(--color-primary);
+    background: var(--color-primary-lighter);
   }
 }
 

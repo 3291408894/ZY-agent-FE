@@ -155,4 +155,97 @@
   --z-sidebar: 900;
   --z-header: 1000;
   --z-overlay: 1100;
+
+  // ═══════════════════════════════════════
+  // 护眼增强 — 蓝光过滤（默认关闭）
+  // ═══════════════════════════════════════
+  --blue-light-filter: none;
+}
+
+
+// ════════════════════════════════════════════════════
+// 暗色护眼模式 (data-theme="dark")
+// 低亮度暖色调，适合暗环境，减少屏幕刺激
+// ════════════════════════════════════════════════════
+
+[data-theme='dark'] {
+  --color-primary: #7BB8E0;
+  --color-primary-light: #3A5068;
+  --color-primary-lighter: #2D3E50;
+  --color-primary-dark: #9CCBED;
+  --color-primary-darkest: #B8D8F2;
+
+  --color-bg: #1E2328;
+  --color-bg-card: #272C33;
+  --color-bg-secondary: #323840;
+  --color-bg-header: #1E2328;
+  --color-bg-sidebar: #22272E;
+  --color-bg-card-hover: #2F353D;
+
+  --color-text: #D4D4D4;
+  --color-text-primary: #E8E6E3;
+  --color-text-secondary: #A0A0A0;
+  --color-text-placeholder: #6B6B6B;
+  --color-text-disabled: #5A5A5A;
+  --color-text-inverse: #1E2328;
+
+  --color-border: #3E454D;
+  --color-border-light: #353C43;
+  --color-border-lighter: #2D3339;
+
+  --color-success: #81C784;
+  --color-success-light: #2E3B2E;
+  --color-warning: #FFB74D;
+  --color-warning-light: #3D3528;
+  --color-danger: #E57373;
+  --color-danger-light: #3D2828;
+  --color-info: #90A4AE;
+  --color-info-light: #2D3235;
+
+  // 暗色护眼：暖色滤镜减少蓝光
+  --blue-light-filter: sepia(0.12) hue-rotate(-10deg) saturate(0.9);
+}
+
+
+// ════════════════════════════════════════════════════
+// 经典配色方案 (data-color-scheme="classic")
+// 标准 Element Plus 蓝白配色
+// ════════════════════════════════════════════════════
+
+[data-color-scheme='classic'] {
+  --color-primary: #409EFF;
+  --color-primary-light: #D9ECFF;
+  --color-primary-lighter: #ECF5FF;
+  --color-primary-dark: #3A8EE6;
+  --color-primary-darkest: #337ECC;
+
+  --color-bg: #F0F2F5;
+  --color-bg-card: #FFFFFF;
+  --color-bg-secondary: #F5F7FA;
+  --color-bg-header: #FFFFFF;
+  --color-bg-sidebar: #F7F8FA;
+  --color-bg-card-hover: #F0F0F0;
+}
+
+
+// ════════════════════════════════════════════════════
+// 阅读模式 (data-reading-mode="true")
+// 隐藏导航、最大化内容区、暖色背景保护眼睛
+// ════════════════════════════════════════════════════
+
+[data-reading-mode='true'] {
+  --header-height: 0px;
+  --footer-height: 0px;
+  --sidebar-width: 0px;
+  --sidebar-collapsed-width: 0px;
+  --page-padding: 8px;
+
+  --color-bg: #F8F6F0;
+  --color-bg-card: transparent;
+  --color-bg-header: transparent;
+  --color-bg-sidebar: transparent;
+
+  --line-height-base: 1.8;
+
+  --blue-light-filter: sepia(0.18) hue-rotate(-15deg) saturate(0.85);
 }
