@@ -113,20 +113,24 @@ export interface IChatSession {
 
 /** 对话消息 */
 export interface IChatMessage {
-  id: string
+  id: string | number
   session_id: string
   role: 'user' | 'assistant'
   content: string
-  thought_chain?: IThoughtStep[]
-  tool_calls?: IToolCall[]
+  thought_chain?: IThoughtStep[] | null
+  tool_calls?: IToolCall[] | null
   created_at: string
 }
 
-/** 思考链步骤（PBI_12） */
+/** 思考链步骤（PBI_12）
+ *  - SSE thought 事件使用 `content` 字段
+ *  - REST API 历史消息使用 `description` 字段
+ *  前端统一通过 `content` 字段读取，`description` 自动映射 */
 export interface IThoughtStep {
   step: number
   title: string
   content: string
+  description?: string
 }
 
 /** 工具调用记录（PBI_12） */
@@ -134,6 +138,26 @@ export interface IToolCall {
   tool_name: string
   parameters: Record<string, any>
   result_summary?: string
+}
+
+/** 会话列表（按日期分组）— GET /agent/sessions 返回 */
+export interface ISessionGroup {
+  label: string // "今天" | "昨天" | "本周" | "更早"
+  sessions: IChatSession[]
+}
+
+/** 会话列表响应 */
+export interface ISessionsResponse {
+  groups: ISessionGroup[]
+}
+
+/** 会话详情（含历史消息）— GET /agent/sessions/{id} 返回 */
+export interface ISessionDetail {
+  id: string
+  title: string
+  created_at: string
+  updated_at: string
+  messages: IChatMessage[]
 }
 
 // ================================================================

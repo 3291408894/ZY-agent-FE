@@ -1,25 +1,36 @@
 // ================================================================
 // 智翼 (ZhiYi) — AI Agent 模块 API
 // 对应 PBI_04/PBI_12 接口
+// 与 AI Agent会话历史接口文档.md 对齐
 // ================================================================
 
-import { get, post, del } from '../request'
-import type { IPaginationParams } from '../types'
-import type { IChatSession, IChatMessage } from '@/types'
+import { get, patch, del } from '../request'
+import type {
+  ISessionsResponse,
+  ISessionDetail,
+} from '@/types'
 
 // ── 会话管理 ──
 
-/** 获取会话列表 */
-export function getSessions(params?: IPaginationParams) {
-  return get<IChatSession[]>('/api/v1/agent/sessions', params)
+/** 获取会话列表（按日期分组）— GET /agent/sessions */
+export function getSessions() {
+  return get<ISessionsResponse>('/api/v1/agent/sessions')
 }
 
-/** 获取会话历史消息 */
+/** 获取会话历史消息 — GET /agent/sessions/{session_id} */
 export function getSessionMessages(sessionId: string) {
-  return get<IChatMessage[]>(`/api/v1/agent/sessions/${sessionId}`)
+  return get<ISessionDetail>(`/api/v1/agent/sessions/${sessionId}`)
 }
 
-/** 删除会话 */
+/** 修改会话标题 — PATCH /agent/sessions/{session_id}/title */
+export function updateSessionTitle(sessionId: string, title: string) {
+  return patch<{ id: string; title: string }>(
+    `/api/v1/agent/sessions/${sessionId}/title`,
+    { title }
+  )
+}
+
+/** 删除会话 — DELETE /agent/sessions/{session_id} */
 export function deleteSession(sessionId: string) {
   return del(`/api/v1/agent/sessions/${sessionId}`)
 }
