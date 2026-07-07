@@ -35,6 +35,7 @@ export function login(data: ILoginRequest) {
       email: string | null
       phone: string | null
       nickname: string
+      role: string
       grade: string | null
       subjects: string[]
       textbook_version: string | null

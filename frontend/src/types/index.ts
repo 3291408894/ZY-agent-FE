@@ -4,10 +4,13 @@
 // 用户 & 认证 (PBI_01)
 // ═══════════════════════════════════════════════════════════
 
+export type UserRole = 'student' | 'teacher' | 'admin'
+
 export interface IRegisterRequest {
   email: string
   phone?: string
   password: string
+  role: UserRole
   grade: string
   subjects: string[]
 }
@@ -39,6 +42,7 @@ export interface IUserBrief {
   email: string | null
   phone: string | null
   nickname: string
+  role: UserRole
   grade: string | null
   subjects: string[]
   textbook_version: string | null
@@ -290,3 +294,257 @@ export type SSESummaryEvent =
   | ISSEKnowledgePointsEvent
   | ISSEDoneEvent
   | ISSEErrorEvent
+
+// ═══════════════════════════════════════════════════════════
+// 班级管理 (功能4)
+// ═══════════════════════════════════════════════════════════
+
+export interface IClassCreate {
+  name: string
+  grade: string
+  subject: string
+  description?: string | null
+}
+
+export interface IClassItem {
+  id: string
+  teacher_id: string
+  name: string
+  grade: string
+  subject: string
+  description: string | null
+  invite_code: string
+  student_count: number
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+export interface IClassStudent {
+  id: string
+  student_id: string
+  nickname: string
+  avatar_url: string | null
+  joined_at: string
+}
+
+export interface IClassDetail extends IClassItem {
+  students: IClassStudent[]
+}
+
+export interface IClassRoster {
+  class_id: string
+  class_name: string
+  student_count: number
+  students: IClassStudent[]
+}
+
+export interface IJoinClassInfo {
+  class_id: string
+  class_name: string
+  teacher_name: string
+  subject: string
+  grade: string
+}
+
+export interface IStudentClassItem {
+  id: string
+  name: string
+  grade: string
+  subject: string
+  teacher_name: string
+  student_count: number
+  joined_at: string
+}
+
+// ═══════════════════════════════════════════════════════════
+// 作业管理 (功能5)
+// ═══════════════════════════════════════════════════════════
+
+export interface IAssignmentQuestion {
+  number: number
+  stem: string
+  options?: string[]
+  answer: string
+  score: number
+  explanation?: string | null
+  scoring_rubric?: string | null
+}
+
+export interface IAssignmentSection {
+  type: 'objective' | 'subjective'
+  title: string
+  questions: IAssignmentQuestion[]
+}
+
+export interface IAssignmentContent {
+  format: 'mixed' | 'objective_only' | 'subjective_only'
+  sections: IAssignmentSection[]
+}
+
+export interface IAssignmentCreate {
+  class_id: string
+  title: string
+  description?: string | null
+  subject: string
+  content: IAssignmentContent
+  total_score?: number | null
+  due_date: string
+  allow_late_submission?: boolean
+}
+
+export interface IAssignmentItem {
+  id: string
+  class_id: string
+  class_name: string
+  title: string
+  subject: string
+  total_score: number | null
+  due_date: string
+  allow_late_submission: boolean
+  submission_count: number
+  graded_count: number
+  status: string
+  created_at: string
+}
+
+export interface IAssignmentDetail {
+  id: string
+  class_id: string
+  class_name: string
+  teacher_id: string
+  title: string
+  description: string | null
+  subject: string
+  content: IAssignmentContent
+  total_score: number | null
+  due_date: string
+  allow_late_submission: boolean
+  submission_count: number
+  graded_count: number
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+export interface IStudentAnswer {
+  question_number: number
+  answer: string
+}
+
+export interface ISubmissionContent {
+  answers: IStudentAnswer[]
+}
+
+export interface ISubmissionCreate {
+  content: ISubmissionContent
+  attachments?: Array<{ name: string; url: string }> | null
+}
+
+export interface ISubmissionItem {
+  id: string
+  assignment_id: string
+  student_id: string
+  student_name: string
+  student_nickname: string
+  score: number | null
+  status: string
+  submitted_at: string | null
+  graded_at: string | null
+}
+
+export interface IStepFeedback {
+  step: string
+  correct: boolean
+  comment: string
+}
+
+export interface IAIFeedback {
+  score: number
+  overall_comment: string
+  step_feedback: IStepFeedback[]
+  error_analysis: string | null
+  suggested_score: number
+}
+
+export interface ISubmissionDetail {
+  id: string
+  assignment_id: string
+  student_id: string
+  student_name: string
+  content: ISubmissionContent
+  attachments: Array<{ name: string; url: string }> | null
+  score: number | null
+  ai_feedback: IAIFeedback | null
+  teacher_feedback: string | null
+  teacher_id: string | null
+  status: string
+  submitted_at: string | null
+  graded_at: string | null
+}
+
+export interface IAssignmentStats {
+  total_students: number
+  submitted_count: number
+  graded_count: number
+  completion_rate: number
+  average_score: number | null
+  score_distribution: Record<string, number>
+  question_stats: Array<{
+    question_number: number
+    stem: string
+    type: string
+    max_score: number
+    average_score: number | null
+    correct_rate: number | null
+  }>
+}
+
+export interface IStudentAssignmentItem {
+  id: string
+  class_id: string
+  class_name: string
+  title: string
+  subject: string
+  total_score: number | null
+  due_date: string
+  allow_late_submission: boolean
+  submission_count: number
+  graded_count: number
+  status: string
+  my_status: 'pending' | 'submitted' | 'graded' | 'returned'
+  my_submission_id: string | null
+  my_score: number | null
+  created_at: string
+}
+
+export interface IQuestionScore {
+  question_number: number
+  score: number
+}
+
+export interface IGradingRequest {
+  scores?: IQuestionScore[] | null
+  teacher_feedback?: string | null
+  confirm_ai_feedback?: boolean
+}
+
+export interface IGradeResult {
+  score: number
+  max_score: number
+  question_feedback: Array<{
+    question_number: number
+    score: number
+    max_score?: number
+    overall_comment?: string
+  }>
+  teacher_feedback: string | null
+  status: string
+}
+
+export interface IBatchGradeResult {
+  total: number
+  success: number
+  failed: number
+  details: Array<{ submission_id: string; status: string; score?: number; error?: string }>
+}

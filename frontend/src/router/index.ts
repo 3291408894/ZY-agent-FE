@@ -15,6 +15,22 @@ const FilesView = () => import('@/views/files/FilesView.vue')
 const KnowledgeView = () => import('@/views/knowledge/KnowledgeView.vue')
 const NotFoundView = () => import('@/views/NotFoundView.vue')
 
+// ── 教师端 ──
+const TeacherClassesIndex = () => import('@/views/teacher/classes/Index.vue')
+const TeacherClassesDetail = () => import('@/views/teacher/classes/Detail.vue')
+const TeacherAssignmentsIndex = () => import('@/views/teacher/assignments/Index.vue')
+const TeacherAssignmentsDetail = () => import('@/views/teacher/assignments/Detail.vue')
+const TeacherAssignmentsSubmissions = () => import('@/views/teacher/assignments/Submissions.vue')
+const TeacherAssignmentsGrading = () => import('@/views/teacher/assignments/GradingView.vue')
+const TeacherAssignmentsStats = () => import('@/views/teacher/assignments/StatsView.vue')
+const TeacherResourcesIndex = () => import('@/views/teacher/resources/Index.vue')
+
+// ── 学生端 ──
+const StudentClassesIndex = () => import('@/views/student/classes/Index.vue')
+const StudentAssignmentsIndex = () => import('@/views/student/assignments/Index.vue')
+const StudentAssignmentsDetail = () => import('@/views/student/assignments/Detail.vue')
+const StudentAssignmentsResult = () => import('@/views/student/assignments/Result.vue')
+
 // ── 路由表 ──
 const routes: RouteRecordRaw[] = [
   // 认证页（全屏布局，无需登录）
@@ -75,6 +91,82 @@ const routes: RouteRecordRaw[] = [
     meta: { layout: 'default', requiresAuth: true },
   },
 
+  // ── 教师端路由 ──
+  {
+    path: '/teacher/resources',
+    name: 'TeacherResources',
+    component: TeacherResourcesIndex,
+    meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
+  },
+  {
+    path: '/teacher/classes',
+    name: 'TeacherClasses',
+    component: TeacherClassesIndex,
+    meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
+  },
+  {
+    path: '/teacher/classes/:id',
+    name: 'TeacherClassDetail',
+    component: TeacherClassesDetail,
+    meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
+  },
+  {
+    path: '/teacher/assignments',
+    name: 'TeacherAssignments',
+    component: TeacherAssignmentsIndex,
+    meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
+  },
+  {
+    path: '/teacher/assignments/:id',
+    name: 'TeacherAssignmentDetail',
+    component: TeacherAssignmentsDetail,
+    meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
+  },
+  {
+    path: '/teacher/assignments/:id/submissions',
+    name: 'TeacherAssignmentSubmissions',
+    component: TeacherAssignmentsSubmissions,
+    meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
+  },
+  {
+    path: '/teacher/assignments/:id/grade/:submissionId',
+    name: 'TeacherAssignmentGrading',
+    component: TeacherAssignmentsGrading,
+    meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
+  },
+  {
+    path: '/teacher/assignments/:id/stats',
+    name: 'TeacherAssignmentStats',
+    component: TeacherAssignmentsStats,
+    meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
+  },
+
+  // ── 学生端路由 ──
+  {
+    path: '/student/classes',
+    name: 'StudentClasses',
+    component: StudentClassesIndex,
+    meta: { layout: 'default', requiresAuth: true },
+  },
+  {
+    path: '/student/assignments',
+    name: 'StudentAssignments',
+    component: StudentAssignmentsIndex,
+    meta: { layout: 'default', requiresAuth: true },
+  },
+  {
+    path: '/student/assignments/:id',
+    name: 'StudentAssignmentDetail',
+    component: StudentAssignmentsDetail,
+    meta: { layout: 'default', requiresAuth: true },
+  },
+  {
+    path: '/student/assignments/:id/result',
+    name: 'StudentAssignmentResult',
+    component: StudentAssignmentsResult,
+    meta: { layout: 'default', requiresAuth: true },
+  },
+
   // 默认重定向 → 启动即进登录页
   {
     path: '/',
@@ -106,6 +198,27 @@ router.beforeEach((to, _from, next) => {
   if (to.meta.requiresAuth && !token) {
     next({ name: 'Login', query: { redirect: to.fullPath } })
     return
+  }
+
+  // 角色校验：教师路由仅教师/admin可访问
+  if (to.meta.requiredRole === 'teacher') {
+    try {
+      // 从 localStorage 读取用户信息进行角色校验
+      const userStr = localStorage.getItem('user_profile')
+      if (userStr) {
+        const user = JSON.parse(userStr)
+        if (user.role !== 'teacher' && user.role !== 'admin') {
+          next('/dashboard')
+          return
+        }
+      } else {
+        next('/dashboard')
+        return
+      }
+    } catch {
+      next('/dashboard')
+      return
+    }
   }
 
   next()

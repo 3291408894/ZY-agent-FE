@@ -2,12 +2,12 @@
 // ================================================================
 // AppSidebar — 智翼平台侧边导航栏
 // 对应 PBI_02：首页导航 + 功能布局
-// 支持折叠/展开，响应式适配
+// 支持折叠/展开，响应式适配，按角色动态切换菜单
 // ================================================================
 
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { RouteRecordName } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 
 // ── 导航菜单项定义 ──
 interface NavItem {
@@ -20,45 +20,22 @@ interface NavItem {
   upcoming?: boolean
 }
 
-const navItems: NavItem[] = [
-  {
-    path: '/dashboard',
-    title: '学习仪表盘',
-    icon: 'Odometer',
-    pbi: 'PBI_02',
-  },
-  {
-    path: '/agent',
-    title: 'AI 助手',
-    icon: 'ChatDotRound',
-    pbi: 'PBI_04',
-  },
-  {
-    path: '/summary',
-    title: '课文总结',
-    icon: 'Document',
-    pbi: 'PBI_06',
-  },
-  {
-    path: '/exercise',
-    title: '习题练习',
-    icon: 'EditPen',
-    pbi: 'PBI_08/09/10',
-    upcoming: true,
-  },
-  {
-    path: '/files',
-    title: '文件管理',
-    icon: 'FolderOpened',
-    pbi: 'PBI_05',
-  },
-  {
-    path: '/knowledge',
-    title: '知识图谱',
-    icon: 'Share',
-    pbi: 'PBI_11',
-    upcoming: true,
-  },
+const studentNavItems: NavItem[] = [
+  { path: '/dashboard', title: '学习仪表盘', icon: 'Odometer', pbi: 'PBI_02' },
+  { path: '/agent', title: 'AI 助手', icon: 'ChatDotRound', pbi: 'PBI_04' },
+  { path: '/summary', title: '课文总结', icon: 'Document', pbi: 'PBI_06' },
+  { path: '/exercise', title: '习题练习', icon: 'EditPen', pbi: 'PBI_08/09/10', upcoming: true },
+  { path: '/files', title: '文件管理', icon: 'FolderOpened', pbi: 'PBI_05' },
+  { path: '/knowledge', title: '知识图谱', icon: 'Share', pbi: 'PBI_11', upcoming: true },
+  { path: '/student/classes', title: '我的班级', icon: 'School', pbi: '功能4' },
+  { path: '/student/assignments', title: '我的作业', icon: 'Notebook', pbi: '功能5' },
+]
+
+const teacherNavItems: NavItem[] = [
+  { path: '/dashboard', title: '首页概览', icon: 'Odometer', pbi: 'PBI_02' },
+  { path: '/teacher/classes', title: '班级管理', icon: 'School', pbi: '功能4' },
+  { path: '/teacher/assignments', title: '作业管理', icon: 'Notebook', pbi: '功能5' },
+  { path: '/teacher/resources', title: '教学资源库', icon: 'FolderOpened', pbi: '功能3' },
 ]
 
 // ── Props ──
@@ -69,6 +46,11 @@ const props = defineProps<{
 // ── Router ──
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
+
+const isTeacher = computed(() => userStore.profile?.role === 'teacher' || userStore.profile?.role === 'admin')
+
+const navItems = computed(() => isTeacher.value ? teacherNavItems : studentNavItems)
 
 const activeMenu = computed(() => {
   const matched = route.matched

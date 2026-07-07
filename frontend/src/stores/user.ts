@@ -38,6 +38,7 @@ export const useUserStore = defineStore('user', () => {
     token.value = accessToken
     profile.value = user
     localStorage.setItem('access_token', accessToken)
+    localStorage.setItem('user_profile', JSON.stringify(user))
   }
 
   /** 清除登录态（退出登录或 Token 过期时调用） */
@@ -45,6 +46,7 @@ export const useUserStore = defineStore('user', () => {
     token.value = null
     profile.value = null
     localStorage.removeItem('access_token')
+    localStorage.removeItem('user_profile')
   }
 
   // ================================================================
