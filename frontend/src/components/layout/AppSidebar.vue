@@ -2,12 +2,13 @@
 // ================================================================
 // AppSidebar — 智翼平台侧边导航栏
 // 对应 PBI_02：首页导航 + 功能布局
-// 支持折叠/展开，响应式适配
+// 支持折叠/展开，响应式适配，角色动态菜单
 // ================================================================
 
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { RouteRecordName } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 
 // ── 导航菜单项定义 ──
 interface NavItem {
@@ -18,9 +19,11 @@ interface NavItem {
   pbi: string
   /** 是否为 Sprint 2 功能（标注「即将上线」） */
   upcoming?: boolean
+  /** 角色过滤：不指定则所有角色可见 */
+  role?: 'student' | 'teacher'
 }
 
-const navItems: NavItem[] = [
+const studentNavItems: NavItem[] = [
   {
     path: '/dashboard',
     title: '学习仪表盘',
@@ -44,7 +47,6 @@ const navItems: NavItem[] = [
     title: '习题练习',
     icon: 'EditPen',
     pbi: 'PBI_08/09/10',
-    upcoming: true,
   },
   {
     path: '/files',
@@ -57,7 +59,27 @@ const navItems: NavItem[] = [
     title: '知识图谱',
     icon: 'Share',
     pbi: 'PBI_11',
-    upcoming: true,
+  },
+  {
+    path: '/student/classes',
+    title: '我的班级',
+    icon: 'School',
+    pbi: 'CLASS',
+  },
+]
+
+const teacherNavItems: NavItem[] = [
+  {
+    path: '/dashboard',
+    title: '工作台',
+    icon: 'Odometer',
+    pbi: 'PBI_02',
+  },
+  {
+    path: '/teacher/classes',
+    title: '班级管理',
+    icon: 'School',
+    pbi: 'CLASS',
   },
 ]
 
@@ -69,6 +91,11 @@ const props = defineProps<{
 // ── Router ──
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
+
+const navItems = computed(() =>
+  userStore.isTeacher ? teacherNavItems : studentNavItems
+)
 
 const activeMenu = computed(() => {
   const matched = route.matched
@@ -115,10 +142,14 @@ function navigate(path: string) {
 
     <!-- ── 底部：Sprint 进度 ── -->
     <div v-show="!collapsed" class="sidebar-footer">
-      <div class="sidebar-footer__progress">
+      <div v-if="!userStore.isTeacher" class="sidebar-footer__progress">
         <div class="sidebar-footer__label">Sprint 1 进度</div>
         <el-progress :percentage="40" :stroke-width="6" :show-text="false" />
         <div class="sidebar-footer__hint">基础层 + 第一阶段开发中</div>
+      </div>
+      <div v-else class="sidebar-footer__progress">
+        <div class="sidebar-footer__label">教师端功能</div>
+        <div class="sidebar-footer__hint">班级管理已上线</div>
       </div>
     </div>
   </aside>

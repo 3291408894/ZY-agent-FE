@@ -33,12 +33,19 @@ export interface IPaginatedData<T> {
   total_pages: number
 }
 
+// ═══════════════════════════════════════════════════════════
+// 用户角色类型
+// ═══════════════════════════════════════════════════════════
+
+export type UserRole = 'student' | 'teacher' | 'admin'
+
 /** 用户简要信息（登录响应 / Store 轻量存储） */
 export interface IUserBrief {
   id: string
   email: string | null
   phone: string | null
   nickname: string
+  role: UserRole
   grade: string | null
   subjects: string[]
   textbook_version: string | null
@@ -290,3 +297,87 @@ export type SSESummaryEvent =
   | ISSEKnowledgePointsEvent
   | ISSEDoneEvent
   | ISSEErrorEvent
+
+// ═══════════════════════════════════════════════════════════
+// 班级管理系统 (PBI: 班级管理)
+// ═══════════════════════════════════════════════════════════
+
+export type ClassStatus = 'active' | 'archived'
+
+/** 班级信息 */
+export interface IClassItem {
+  id: string
+  name: string
+  grade: string
+  subject: string
+  description: string | null
+  invite_code: string
+  student_count: number
+  status: ClassStatus
+  created_at: string
+  updated_at: string
+}
+
+/** 班级列表响应 */
+export interface IClassListData {
+  classes: IClassItem[]
+}
+
+/** 创建班级请求 */
+export interface IClassCreateRequest {
+  name: string
+  grade: string
+  subject: string
+  description?: string
+}
+
+/** 花名册学生条目 */
+export interface IRosterStudent {
+  id: string
+  student_id: string
+  student_name: string
+  joined_at: string
+}
+
+/** 花名册响应 */
+export interface IRosterData {
+  roster: IRosterStudent[]
+}
+
+/** 重新生成邀请码响应 */
+export interface IInviteCodeData {
+  invite_code: string
+}
+
+/** 归档班级响应 */
+export interface IArchiveClassData {
+  status: 'archived'
+}
+
+/** 加入班级请求 */
+export interface IJoinClassRequest {
+  invite_code: string
+}
+
+/** 加入班级响应 */
+export interface IJoinClassData {
+  success: boolean
+  class_id: string
+  class_name: string
+}
+
+/** 学生端班级信息（不含邀请码） */
+export interface IStudentClassItem {
+  id: string
+  name: string
+  grade: string
+  subject: string
+  description: string | null
+  status: ClassStatus
+  joined_at: string
+}
+
+/** 学生端班级列表响应 */
+export interface IStudentClassListData {
+  classes: IStudentClassItem[]
+}

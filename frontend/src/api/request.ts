@@ -77,4 +77,9 @@ export function del<T = unknown>(url: string): Promise<T> {
   return request.delete(url) as Promise<T>
 }
 
+/** PATCH 请求 */
+export function patch<T = unknown>(url: string, data?: object): Promise<T> {
+  return request.patch(url, data) as Promise<T>
+}
+
 export default request

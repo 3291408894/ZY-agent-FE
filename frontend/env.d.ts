@@ -6,6 +6,18 @@ declare module '*.vue' {
   export default component
 }
 
+// Vue Router 路由元信息扩展
+export {}
+
+declare module 'vue-router' {
+  interface RouteMeta {
+    layout?: 'default' | 'fullscreen'
+    requiresAuth?: boolean
+    guest?: boolean
+    requiredRole?: 'teacher'
+  }
+}
+
 interface ImportMetaEnv {
   readonly VITE_API_BASE_URL: string
   readonly VITE_USE_MOCK: string

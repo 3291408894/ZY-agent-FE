@@ -15,6 +15,13 @@ const FilesView = () => import('@/views/files/FilesView.vue')
 const KnowledgeView = () => import('@/views/knowledge/KnowledgeView.vue')
 const NotFoundView = () => import('@/views/NotFoundView.vue')
 
+// ── 教师端页面 ──
+const TeacherClassesIndex = () => import('@/views/teacher/classes/Index.vue')
+const TeacherClassesDetail = () => import('@/views/teacher/classes/Detail.vue')
+
+// ── 学生端页面 ──
+const StudentClassesIndex = () => import('@/views/student/classes/Index.vue')
+
 // ── 路由表 ──
 const routes: RouteRecordRaw[] = [
   // 认证页（全屏布局，无需登录）
@@ -75,6 +82,28 @@ const routes: RouteRecordRaw[] = [
     meta: { layout: 'default', requiresAuth: true },
   },
 
+  // ── 教师端页面 ──
+  {
+    path: '/teacher/classes',
+    name: 'TeacherClasses',
+    component: TeacherClassesIndex,
+    meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
+  },
+  {
+    path: '/teacher/classes/:classId',
+    name: 'TeacherClassesDetail',
+    component: TeacherClassesDetail,
+    meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
+  },
+
+  // ── 学生端页面 ──
+  {
+    path: '/student/classes',
+    name: 'StudentClasses',
+    component: StudentClassesIndex,
+    meta: { layout: 'default', requiresAuth: true },
+  },
+
   // 默认重定向 → 启动即进登录页
   {
     path: '/',
@@ -106,6 +135,22 @@ router.beforeEach((to, _from, next) => {
   if (to.meta.requiresAuth && !token) {
     next({ name: 'Login', query: { redirect: to.fullPath } })
     return
+  }
+
+  // 教师专属页面角色校验（从 localStorage 读取缓存的用户信息）
+  if (to.meta.requiredRole === 'teacher') {
+    try {
+      const cached = localStorage.getItem('user_profile')
+      if (cached) {
+        const profile = JSON.parse(cached)
+        if (profile.role !== 'teacher' && profile.role !== 'admin') {
+          next('/dashboard')
+          return
+        }
+      }
+    } catch {
+      // 解析失败则放行，由后端鉴权兜底
+    }
   }
 
   next()
