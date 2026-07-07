@@ -746,3 +746,127 @@ export const GRADE_OPTIONS = [
   '七年级', '八年级', '九年级',
   '高一', '高二', '高三',
 ]
+
+// ═══════════════════════════════════════════════════════════
+// 教师端 — 试卷生成器 (功能2)
+// ═══════════════════════════════════════════════════════════
+
+export type ExamType = 'unit_test' | 'midterm' | 'final'
+export type ExamPaperStatus = 'generating' | 'completed' | 'failed'
+export type ExportFormat = 'word' | 'pdf' | 'printable'
+
+export const EXAM_TYPE_LABELS: Record<ExamType, string> = {
+  unit_test: '单元测试',
+  midterm: '期中考试',
+  final: '期末考试',
+}
+
+export interface IQuestionTypeConfig {
+  type: string
+  count: number
+  score_per: number
+  subtotal: number
+}
+
+export interface IExamPaperGenerateRequest {
+  title: string
+  subject: string
+  grade: string
+  exam_type: ExamType
+  total_score: number
+  difficulty_ratio: { easy: number; medium: number; hard: number }
+  question_structure: IQuestionTypeConfig[]
+  focus_instruction?: string
+}
+
+export interface IExamPaperHeader {
+  title: string
+  subject: string
+  grade: string
+  exam_type: string
+  total_score: number
+  duration_minutes: number
+  instructions: string
+}
+
+export interface IExamPaperQuestion {
+  number: number
+  stem: string
+  question_type: string
+  options?: string[]
+  answer: string
+  score: number
+  analysis: string
+  knowledge_points: string[]
+}
+
+export interface IExamPaperSection {
+  title: string
+  instructions: string
+  questions: IExamPaperQuestion[]
+}
+
+export interface IExamPaperContent {
+  header: IExamPaperHeader
+  sections: IExamPaperSection[]
+  answer_key: { number: number; answer: string; score: number }[]
+  scoring_guide: string
+}
+
+export interface IExamPaperItem {
+  id: string
+  title: string
+  subject: string
+  grade: string
+  exam_type: ExamType
+  total_score: number
+  status: ExamPaperStatus
+  question_count: number
+  created_at: string
+}
+
+export interface IExamPaperDetail {
+  id: string
+  user_id: string
+  title: string
+  subject: string
+  grade: string
+  exam_type: ExamType
+  total_score: number
+  difficulty_ratio: { easy: number; medium: number; hard: number }
+  question_structure: IQuestionTypeConfig[]
+  content: IExamPaperContent
+  answer_sheet: Record<string, unknown> | null
+  export_url: string | null
+  export_format: string | null
+  status: ExamPaperStatus
+  error_message: string | null
+  created_at: string
+  updated_at: string
+}
+
+// 试卷生成 SSE 事件
+export interface ISSEExamThinkingEvent {
+  type: 'thinking'
+  stage: string
+  message: string
+}
+
+export interface ISSEExamProgressEvent {
+  type: 'progress'
+  stage: string
+  message: string
+}
+
+export interface ISSEExamDoneEvent {
+  type: 'done'
+  paper_id: string
+  title: string
+}
+
+export type SSEExamEvent =
+  | ISSEContentEvent
+  | ISSEExamThinkingEvent
+  | ISSEExamProgressEvent
+  | ISSEExamDoneEvent
+  | ISSEErrorEvent

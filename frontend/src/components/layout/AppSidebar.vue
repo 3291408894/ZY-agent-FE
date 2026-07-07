@@ -105,6 +105,12 @@ const teacherNavItems: NavItem[] = [
     icon: 'Notebook',
     pbi: 'PBI_LP',
   },
+  {
+    path: '/teacher/exam-paper',
+    title: '试卷生成器',
+    icon: 'DocumentChecked',
+    pbi: 'EXAM',
+  },
 ]
 
 // ── Props ──

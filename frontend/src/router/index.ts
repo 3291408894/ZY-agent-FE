@@ -25,6 +25,8 @@ const TeacherAssignmentsGrading = () => import('@/views/teacher/assignments/Grad
 const TeacherAssignmentsStats = () => import('@/views/teacher/assignments/StatsView.vue')
 const TeacherResourcesIndex = () => import('@/views/teacher/resources/Index.vue')
 const LessonPlanView = () => import('@/views/lessonPlan/LessonPlanView.vue')
+const ExamPaperIndex = () => import('@/views/teacher/exam-paper/Index.vue')
+const ExamPaperDetail = () => import('@/views/teacher/exam-paper/Detail.vue')
 
 // ── 学生端页面 ──
 const StudentClassesIndex = () => import('@/views/student/classes/Index.vue')
@@ -149,6 +151,20 @@ const routes: RouteRecordRaw[] = [
     path: '/lesson-plan',
     name: 'LessonPlan',
     component: LessonPlanView,
+    meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
+  },
+
+  // ── 教师端：试卷生成器 ──
+  {
+    path: '/teacher/exam-paper',
+    name: 'ExamPaper',
+    component: ExamPaperIndex,
+    meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
+  },
+  {
+    path: '/teacher/exam-paper/:id',
+    name: 'ExamPaperDetail',
+    component: ExamPaperDetail,
     meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
   },
 
