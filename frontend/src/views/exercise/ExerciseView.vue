@@ -24,7 +24,7 @@ async function handleGenerate(config: any) {
     const token = localStorage.getItem('access_token')
     const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api/v1/exercises/generate`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), Accept: 'text/event-stream' },
-      body: JSON.stringify(req), signal: ctrl.signal,
+      body: JSON.stringify(req.body), signal: ctrl.signal,
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const reader = res.body!.getReader(); const decoder = new TextDecoder(); let buf = ''
