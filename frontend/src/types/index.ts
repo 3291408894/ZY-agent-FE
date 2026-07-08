@@ -685,6 +685,41 @@ export const RESOURCE_ALLOWED_EXTENSIONS = [
 export const RESOURCE_MAX_SIZE = 50 * 1024 * 1024
 
 // ═══════════════════════════════════════════════════════════
+// 班级资源分享 (功能6)
+// ═══════════════════════════════════════════════════════════
+
+export interface ISendToClassRequest {
+  class_ids: string[]
+}
+
+export interface IClassResourceItem {
+  id: string
+  class_id: string
+  class_name: string
+  resource_id: string
+  resource_title: string
+  resource_file_type: string
+  resource_file_name: string
+  resource_file_size: number
+  resource_subject: string
+  resource_grade: string
+  shared_by: string
+  shared_by_name: string
+  created_at: string | null
+}
+
+export interface ISendToClassResult {
+  success_count: number
+  skipped: string[]
+  errors: string[]
+}
+
+export interface ISaveToKnowledgeResult {
+  file_id: string
+  filename: string
+}
+
+// ═══════════════════════════════════════════════════════════
 // 智能教案生成 (PBI_LP)
 // ═══════════════════════════════════════════════════════════
 

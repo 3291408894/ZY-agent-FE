@@ -1,24 +1,27 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { Back, Delete } from '@element-plus/icons-vue'
 import { useTeachingResourceStore } from '@/stores/teachingResource'
 import { useUserStore } from '@/stores/user'
 import { RESOURCE_TYPE_LABELS, FILE_TYPE_LABELS, FILE_TYPE_ICONS } from '@/types'
-import { getDownloadUrl } from '@/api/modules/teachingResource'
+import { downloadResource } from '@/api/modules/teachingResource'
+import SendToClassDialog from './components/SendToClassDialog.vue'
 
 const route = useRoute(); const router = useRouter()
 const store = useTeachingResourceStore(); const userStore = useUserStore()
 
 const id = computed(() => route.params.id as string)
 const isOwner = computed(() => userStore.profile?.id && store.currentDetail?.uploader?.id === userStore.profile.id)
+const sendToClassDialog = ref<InstanceType<typeof SendToClassDialog>>()
 
 onMounted(() => store.fetchDetail(id.value))
 
 function fmtSize(b: number) { return b < 1024 * 1024 ? (b / 1024).toFixed(0) + ' KB' : (b / (1024 * 1024)).toFixed(1) + ' MB' }
 function fmtDate(iso: string) { return new Date(iso).toLocaleString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }
-function handleDownload() { if (store.currentDetail) window.open(getDownloadUrl(store.currentDetail.id), '_blank') }
+function handleDownload() { if (store.currentDetail) downloadResource(store.currentDetail.id, store.currentDetail.file_name).catch(() => {}) }
+function handleSendToClass() { if (store.currentDetail) sendToClassDialog.value?.openForResource(store.currentDetail.id) }
 
 async function handleDelete() {
   try { await ElMessageBox.confirm(`确定删除「${store.currentDetail?.title}」吗？`, '删除确认', { type: 'warning' }); await store.remove(id.value); router.replace('/teacher/resources') } catch { }
@@ -82,6 +85,9 @@ async function handleDelete() {
 
           <div class="side-card">
             <el-button type="primary" size="large" style="width:100%" @click="handleDownload"><el-icon><Download /></el-icon> 下载资源</el-button>
+            <el-button v-if="userStore.isTeacher && isOwner" size="large" style="width:100%;margin-top:8px" type="success" @click="handleSendToClass">
+              <el-icon><Position /></el-icon> 发送到班级
+            </el-button>
             <el-button size="large" style="width:100%;margin-top:8px" :type="store.currentDetail.is_favorited ? 'warning' : 'default'" @click="store.toggleFav(store.currentDetail.id)">
               <el-icon><component :is="store.currentDetail.is_favorited ? 'StarFilled' : 'Star'" /></el-icon>
               {{ store.currentDetail.is_favorited ? '已收藏' : '收藏资源' }}
@@ -93,6 +99,7 @@ async function handleDelete() {
     </template>
 
     <el-empty v-if="!store.currentDetail && !store.detailLoading" description="资源不存在或无权查看" />
+    <SendToClassDialog ref="sendToClassDialog" />
   </div>
 </template>
 

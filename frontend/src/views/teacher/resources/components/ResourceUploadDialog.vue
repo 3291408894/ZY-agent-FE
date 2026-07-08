@@ -13,6 +13,16 @@ const store = useTeachingResourceStore()
 const form = ref({ title: '', subject: '', grade: '', resource_type: 'other', visibility: 'public', description: '', tags: '' })
 const fileList = ref<Array<{ name: string; size?: number; raw?: File }>>([])
 
+/** el-upload 选中/移除文件时同步到本地 fileList */
+function handleFileChange(_file: any, uploadedFiles: any[]) {
+  // uploadedFiles 是 el-upload 内部维护的文件列表
+  fileList.value = uploadedFiles.map((f: any) => ({
+    name: f.name,
+    size: f.size,
+    raw: f.raw || f,
+  }))
+}
+
 function beforeUpload(f: UploadRawFile) {
   const ext = '.' + (f.name.split('.').pop()?.toLowerCase() || '')
   if (!RESOURCE_ALLOWED_EXTENSIONS.includes(ext)) { ElMessage.error('不支持的文件格式: ' + ext); return false }
@@ -52,7 +62,7 @@ function fmtSize(b: number) { return b < 1024 * 1024 ? (b / 1024).toFixed(0) + '
   <el-dialog :model-value="visible" title="上传教学资源" width="600px" :close-on-click-modal="false" @update:model-value="emit('update:visible', $event)" @close="close">
     <el-form label-width="90px" label-position="left">
       <el-form-item label="选择文件" required>
-        <el-upload :auto-upload="false" :limit="1" :before-upload="beforeUpload" :on-exceed="() => ElMessage.warning('最多上传 1 个文件')" drag class="upload-area" :file-list="fileList as any">
+        <el-upload :auto-upload="false" :limit="1" :before-upload="beforeUpload" :on-change="handleFileChange" :on-exceed="() => ElMessage.warning('最多上传 1 个文件')" drag class="upload-area" :file-list="fileList as any">
           <el-icon :size="40"><UploadFilled /></el-icon>
           <div class="upload-text"><p>将文件拖到此处，或 <em>点击选择</em></p><p class="hint">支持: PDF/Word/PPT/Excel/图片/视频/音频/压缩包，最大 50MB</p></div>
         </el-upload>

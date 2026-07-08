@@ -25,6 +25,26 @@ const total = ref(0)
 // ── 计算属性 ──
 const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
 
+// ── 薄弱知识点汇总 ──
+const weakPointsSummary = computed(() => {
+  const freq: Record<string, number> = {}
+  records.value.forEach(record => {
+    if (record.grade_result) {
+      record.grade_result.results
+        .filter(r => !r.is_correct)
+        .forEach(r => {
+          r.related_knowledge?.forEach(kp => {
+            freq[kp] = (freq[kp] || 0) + 1
+          })
+        })
+    }
+  })
+  return Object.entries(freq)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 8)
+    .map(([kp, count]) => ({ name: kp, count }))
+})
+
 // ── 加载数据 ──
 async function loadHistory() {
   loading.value = true
@@ -106,6 +126,22 @@ onMounted(() => {
         <p class="exercise-history__subtitle">共 {{ total }} 条记录</p>
       </div>
       <el-button @click="emit('back')">返回出题</el-button>
+    </div>
+
+    <!-- ── 薄弱知识点汇总 ── -->
+    <div v-if="weakPointsSummary.length > 0" class="weak-summary">
+      <h3>🔍 薄弱知识点汇总</h3>
+      <p class="weak-summary__subtitle">根据历史错题统计，以下知识点需要加强练习：</p>
+      <div class="weak-summary__list">
+        <div
+          v-for="wp in weakPointsSummary"
+          :key="wp.name"
+          class="weak-summary__item"
+        >
+          <span class="weak-summary__name">{{ wp.name }}</span>
+          <el-tag type="danger" size="small" effect="dark">错 {{ wp.count }} 次</el-tag>
+        </div>
+      </div>
     </div>
 
     <!-- 空状态 -->
@@ -305,6 +341,46 @@ onMounted(() => {
 .text-success { color: var(--color-success); }
 .text-warning { color: var(--color-warning); }
 .text-danger { color: var(--color-danger); }
+
+// ── 薄弱知识点汇总 ──
+.weak-summary {
+  background: var(--color-warning-light);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+
+  h3 {
+    font-size: var(--font-size-base);
+    margin-bottom: var(--spacing-xs);
+  }
+
+  &__subtitle {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--spacing-md);
+  }
+
+  &__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-base);
+    background: white;
+    border-radius: var(--radius-sm);
+  }
+
+  &__name {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+  }
+}
 
 // ── 响应式 ──
 @media (max-width: 640px) {

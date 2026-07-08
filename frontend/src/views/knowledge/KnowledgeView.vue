@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useKnowledge } from '@/composables/useKnowledge'
 import { getFileList } from '@/api/modules/file'
 import KnowledgeGraphCanvas from './components/KnowledgeGraphCanvas.vue'
 import type { IGraphNode, IKnowledgeNode, IUploadedFile } from '@/types'
+
+const router = useRouter()
 
 const {
   graphList, currentGraph, listLoading, graphLoading, isGenerating,
@@ -19,6 +22,13 @@ const fileLoading = ref(false)
 const nodeDetail = ref<IKnowledgeNode | null>(null)
 const detailVisible = ref(false)
 
+// 已选中的文件名（用于展示）
+const selectedFileName = computed(() => {
+  if (sourceType.value !== 'file' || !selectedFileId.value) return null
+  const f = fileList.value.find(f => f.id === selectedFileId.value)
+  return f?.filename ?? null
+})
+
 const PRESETS = [
   { label: '七年级文言文', type: 'subject' as const, value: '语文-七年级-文言文' },
   { label: '八年级数学函数', type: 'chapter' as const, value: '数学-八年级-函数' },
@@ -28,25 +38,43 @@ const PRESETS = [
   { label: '中国近代史', type: 'subject' as const, value: '历史-八年级-近代史' },
 ]
 
-onMounted(() => { fetchGraphList() })
+onMounted(() => {
+  fetchGraphList()
+  loadFileList()  // 预加载文件列表，让"文件"模式立即可用
+})
 
 /** 加载文件列表供下拉选择 */
 async function loadFileList() {
   fileLoading.value = true
   try {
     const res = await getFileList(1, 100)
+    // 只显示已解析完成的文件（有内容可用于生成知识图谱）
     fileList.value = (res?.items || []).filter(f => f.parse_status === 'done')
-  } catch { fileList.value = [] }
-  finally { fileLoading.value = false }
+  } catch {
+    fileList.value = []
+  } finally {
+    fileLoading.value = false
+  }
 }
 
-/** 切换 sourceType 时自动加载文件列表 */
-watch(sourceType, (t) => { if (t === 'file') loadFileList() })
+/** 切换 sourceType 时刷新文件列表 */
+watch(sourceType, (t) => {
+  if (t === 'file') loadFileList()
+})
 
 async function handleGenerate() {
+  if (sourceType.value === 'file' && !selectedFileId.value) {
+    ElMessage.warning('请先选择一个文件')
+    return
+  }
+  if (sourceType.value !== 'file' && !sourceInput.value.trim()) {
+    ElMessage.warning('请输入学科或章节名称')
+    return
+  }
+
   const params: { source_type: 'subject' | 'chapter' | 'file'; source: string; file_id?: string | null } = {
     source_type: sourceType.value,
-    source: sourceType.value === 'file' ? (selectedFileId.value || '') : sourceInput.value,
+    source: sourceType.value === 'file' ? (selectedFileId.value || '') : sourceInput.value.trim(),
     file_id: sourceType.value === 'file' ? selectedFileId.value : null,
   }
   try { await generate(params) }
@@ -80,6 +108,11 @@ async function handleExport() {
   try { await exportCurrentGraph(gid); ElMessage.success('导出成功') }
   catch { ElMessage.error('导出失败') }
 }
+
+/** 跳转到文件管理页面上传文件 */
+function goToFiles() {
+  router.push('/files')
+}
 </script>
 
 <template>
@@ -89,37 +122,55 @@ async function handleExport() {
       <h3>知识图谱</h3>
       <!-- 生成 -->
       <div style="margin-bottom:var(--spacing-base)">
-        <el-select v-model="sourceType" size="small" style="width:100%;margin-bottom:var(--spacing-xs)"><el-option label="学科" value="subject" /><el-option label="章节" value="chapter" /><el-option label="文件" value="file" /></el-select>
-        <!-- 文件模式：下拉选择已上传的文件 -->
-        <el-select
-          v-if="sourceType === 'file'"
-          v-model="selectedFileId"
-          placeholder="选择文件..."
-          size="small"
-          filterable
-          clearable
-          style="width:100%;margin-bottom:var(--spacing-xs)"
-          :loading="fileLoading"
-        >
-          <el-option
-            v-for="f in fileList"
-            :key="f.id"
-            :label="f.filename"
-            :value="f.id"
-          >
-            <div style="display:flex;flex-direction:column;gap:2px">
-              <span style="font-size:var(--font-size-sm)">{{ f.filename }}</span>
-              <span style="font-size:var(--font-size-xs);color:var(--color-text-placeholder)">{{ f.parse_status === 'done' ? '✅ 已解析' : f.parse_status }}</span>
-            </div>
-          </el-option>
+        <el-select v-model="sourceType" size="small" style="width:100%;margin-bottom:var(--spacing-xs)">
+          <el-option label="📚 按学科" value="subject" />
+          <el-option label="📖 按章节" value="chapter" />
+          <el-option label="📁 从文件构建" value="file" />
         </el-select>
+        <!-- 文件模式：下拉选择已上传的文件 -->
+        <template v-if="sourceType === 'file'">
+          <el-select
+            v-model="selectedFileId"
+            placeholder="选择已解析的文件…"
+            size="small"
+            filterable
+            clearable
+            style="width:100%;margin-bottom:var(--spacing-xs)"
+            :loading="fileLoading"
+            :empty-text="'没有已解析的文件'"
+          >
+            <el-option
+              v-for="f in fileList"
+              :key="f.id"
+              :label="f.filename"
+              :value="f.id"
+            >
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <span style="font-size:var(--font-size-sm)">{{ f.filename }}</span>
+                <span style="font-size:var(--font-size-xs);color:var(--color-text-placeholder)">{{ f.file_type.toUpperCase() }} · ✅ 已解析</span>
+              </div>
+            </el-option>
+          </el-select>
+          <!-- 没有可用文件时提示上传 -->
+          <div v-if="!fileLoading && fileList.length === 0" class="file-hint">
+            <span>暂无已解析的文件</span>
+            <el-button link type="primary" size="small" @click="goToFiles">去上传文件 →</el-button>
+          </div>
+          <!-- 已有文件时也可跳转上传 -->
+          <div v-else class="file-hint">
+            <el-button link type="primary" size="small" @click="goToFiles">📤 上传新文件</el-button>
+          </div>
+        </template>
         <!-- 文本模式：手工输入 -->
-        <el-input v-else v-model="sourceInput" placeholder="输入学科/章节..." size="small" style="margin-bottom:var(--spacing-xs)" />
-        <el-button type="primary" size="small" :loading="isGenerating" @click="handleGenerate" style="width:100%">生成图谱</el-button>
+        <el-input v-else v-model="sourceInput" placeholder="输入学科/章节名称…" size="small" style="margin-bottom:var(--spacing-xs)" @keyup.enter="handleGenerate" />
+        <el-button type="primary" size="small" :loading="isGenerating" @click="handleGenerate" style="width:100%">
+          {{ isGenerating ? '正在生成…' : sourceType === 'file' && selectedFileName ? `为「${selectedFileName}」生成图谱` : '生成图谱' }}
+        </el-button>
       </div>
 
       <!-- 预设 -->
       <div class="preset-list">
+        <span class="preset-list__label">快捷预设：</span>
         <el-button v-for="p in PRESETS" :key="p.value" size="small" text style="display:block;width:100%;text-align:left;margin-bottom:2px" @click="sourceType = p.type; sourceInput = p.value; selectedFileId = null; handleGenerate()">
           {{ p.label }}
         </el-button>
@@ -127,6 +178,7 @@ async function handleExport() {
 
       <!-- 历史列表 -->
       <div style="margin-top:var(--spacing-base);flex:1;overflow-y:auto" v-loading="listLoading">
+        <div v-if="listError" style="color:var(--color-danger);font-size:var(--font-size-xs);padding:var(--spacing-sm)">{{ listError }}</div>
         <div v-for="g in graphList" :key="g.id" class="history-item" :class="{ active: currentGraph?.graph_id === g.id }" @click="handleSelect(g.id)">
           <div style="flex:1;min-width:0">
             <div style="font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ g.title }}</div>
@@ -142,6 +194,7 @@ async function handleExport() {
       <div v-if="!currentGraph" class="empty-state" style="height:100%">
         <div class="empty-state__icon">🔗</div>
         <div class="empty-state__text">选择或生成一个知识图谱</div>
+        <div class="empty-state__hint">从左侧选择来源（学科/章节/文件），点击"生成图谱"开始</div>
       </div>
       <template v-else>
         <div class="graph-toolbar">
@@ -182,5 +235,35 @@ async function handleExport() {
 .history-item { display:flex; align-items:center; gap:var(--spacing-sm); padding:var(--spacing-sm) var(--spacing-xs); border-radius:var(--radius-sm); cursor:pointer; transition:background var(--transition-fast);
   &:hover { background:var(--color-bg-secondary); }
   &.active { background:var(--color-primary-lighter); }
+}
+
+// ── 预设标签 ──
+.preset-list {
+  &__label {
+    font-size: 11px;
+    color: var(--color-text-placeholder);
+    display: block;
+    margin-bottom: 4px;
+  }
+}
+
+// ── 文件提示 ──
+.file-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--color-text-placeholder);
+  padding: 2px 0;
+  margin-bottom: var(--spacing-xs);
+}
+
+// ── 空态提示 ──
+.empty-state {
+  &__hint {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-placeholder);
+    margin-top: var(--spacing-sm);
+  }
 }
 </style>

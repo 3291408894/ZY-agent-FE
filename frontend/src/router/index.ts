@@ -25,6 +25,7 @@ const TeacherAssignmentsSubmissions = () => import('@/views/teacher/assignments/
 const TeacherAssignmentsGrading = () => import('@/views/teacher/assignments/GradingView.vue')
 const TeacherAssignmentsStats = () => import('@/views/teacher/assignments/StatsView.vue')
 const TeacherResourcesIndex = () => import('@/views/teacher/resources/Index.vue')
+const TeacherResourcesDetail = () => import('@/views/teacher/resources/Detail.vue')
 const LessonPlanView = () => import('@/views/lessonPlan/LessonPlanView.vue')
 const ExamPaperIndex = () => import('@/views/teacher/exam-paper/Index.vue')
 const ExamPaperDetail = () => import('@/views/teacher/exam-paper/Detail.vue')
@@ -150,6 +151,12 @@ const routes: RouteRecordRaw[] = [
     path: '/teacher/resources',
     name: 'TeacherResources',
     component: TeacherResourcesIndex,
+    meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
+  },
+  {
+    path: '/teacher/resources/:id',
+    name: 'TeacherResourcesDetail',
+    component: TeacherResourcesDetail,
     meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
   },
 

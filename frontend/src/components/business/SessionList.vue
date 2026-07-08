@@ -9,6 +9,11 @@ import { ref, onMounted } from 'vue'
 import { useAgentStore } from '@/stores/agent'
 import { ElMessageBox } from 'element-plus'
 
+// ── Props ──
+const props = defineProps<{
+  isNewSession?: boolean
+}>()
+
 const agentStore = useAgentStore()
 
 // ── Emits ──
@@ -80,6 +85,22 @@ function truncateTitle(title: string, maxLen = 20): string {
 
     <!-- ── 会话列表 ── -->
     <div class="session-list__items">
+      <!-- 新建会话临时条目 -->
+      <div
+        v-if="props.isNewSession"
+        class="session-item is-active session-item--new"
+      >
+        <div class="session-item__icon">
+          <el-icon :size="16"><EditPen /></el-icon>
+        </div>
+        <div class="session-item__info">
+          <div class="session-item__title" style="color: var(--color-primary); font-weight: 600">
+            ✨ 新对话
+          </div>
+          <div class="session-item__time">开始提问吧</div>
+        </div>
+      </div>
+
       <!-- 加载中 -->
       <div v-if="agentStore.isLoadingSessions" class="session-list__loading">
         <el-icon class="is-loading" :size="20"><Loading /></el-icon>

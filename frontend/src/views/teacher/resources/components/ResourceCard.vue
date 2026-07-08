@@ -2,10 +2,12 @@
 import type { ITeachingResource } from '@/types'
 import { FILE_TYPE_ICONS, RESOURCE_TYPE_LABELS } from '@/types'
 import { useTeachingResourceStore } from '@/stores/teachingResource'
+import { useUserStore } from '@/stores/user'
 
 const props = defineProps<{ resource: ITeachingResource }>()
-const emit = defineEmits<{ click: [id: string]; download: [id: string] }>()
+const emit = defineEmits<{ click: [id: string]; download: [id: string]; sendToClass: [id: string] }>()
 const store = useTeachingResourceStore()
+const userStore = useUserStore()
 
 function fmtSize(b: number): string {
   if (b < 1024) return b + ' B'
@@ -52,6 +54,15 @@ function fmtDate(iso: string): string {
         </el-button>
         <el-button link size="small" type="primary" @click="emit('download', resource.id)">
           <el-icon :size="16"><Download /></el-icon>
+        </el-button>
+        <el-button
+          v-if="userStore.isTeacher && resource.uploader?.id === userStore.profile?.id"
+          link
+          size="small"
+          type="success"
+          @click="emit('sendToClass', resource.id)"
+        >
+          <el-icon :size="16"><Position /></el-icon>
         </el-button>
       </div>
     </div>

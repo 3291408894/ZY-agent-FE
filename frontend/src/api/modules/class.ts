@@ -74,3 +74,22 @@ export function getStudentClasses() {
 export function leaveClass(classId: string) {
   return del<null>(`/api/v1/student/classes/${classId}/leave`)
 }
+
+// ================================================================
+// 班级资源分享 (师生联动)
+// ================================================================
+
+/** 教师查看班级已分享资源 — GET /api/v1/teacher/classes/{classId}/resources */
+export function getTeacherClassResources(classId: string, params?: { page?: number; page_size?: number }) {
+  return get<any>(`/api/v1/teacher/classes/${classId}/resources`, params)
+}
+
+/** 学生查看班级共享资源 — GET /api/v1/student/classes/{classId}/resources */
+export function getStudentClassResources(classId: string, params?: { page?: number; page_size?: number }) {
+  return get<any>(`/api/v1/student/classes/${classId}/resources`, params)
+}
+
+/** 学生保存资源到知识库 — POST /api/v1/student/classes/{classId}/resources/{resourceId}/save-to-knowledge */
+export function saveResourceToKnowledge(classId: string, resourceId: string) {
+  return post<any>(`/api/v1/student/classes/${classId}/resources/${resourceId}/save-to-knowledge`)
+}

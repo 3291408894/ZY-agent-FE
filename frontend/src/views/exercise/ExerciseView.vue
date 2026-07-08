@@ -57,7 +57,19 @@ onUnmounted(() => abortCtrl.value?.abort())
 
 <template>
   <div class="page-container">
-    <div class="page-header"><h1 class="page-header__title">习题练习</h1><p class="page-header__subtitle">AI 智能出题 · 自动批改 · 错题解析</p></div>
+    <div class="page-header">
+      <div>
+        <h1 class="page-header__title">习题练习</h1>
+        <p class="page-header__subtitle">AI 智能出题 · 自动批改 · 错题解析</p>
+      </div>
+      <el-button
+        v-if="stage !== 'history'"
+        size="default"
+        @click="stage = 'history'"
+      >
+        📋 历史记录
+      </el-button>
+    </div>
     <ExerciseConfig v-if="stage === 'config'" @generate="handleGenerate" />
     <div v-if="stage === 'generating'" class="card" style="text-align:center;padding:var(--spacing-xxxl)">
       <el-icon :size="32" class="is-loading"><Loading /></el-icon>

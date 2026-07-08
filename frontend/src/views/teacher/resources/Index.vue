@@ -7,12 +7,14 @@ import { useUserStore } from '@/stores/user'
 import ResourceFilter from './components/ResourceFilter.vue'
 import ResourceCard from './components/ResourceCard.vue'
 import ResourceUploadDialog from './components/ResourceUploadDialog.vue'
-import { getDownloadUrl } from '@/api/modules/teachingResource'
+import SendToClassDialog from './components/SendToClassDialog.vue'
+import { downloadResource } from '@/api/modules/teachingResource'
 
 const router = useRouter()
 const store = useTeachingResourceStore()
 const isTeacher = useUserStore().profile?.role === 'teacher' || useUserStore().profile?.role === 'admin'
 const uploadVisible = ref(false)
+const sendToClassDialog = ref<InstanceType<typeof SendToClassDialog>>()
 
 onMounted(async () => {
   await store.fetchFilterOptions()
@@ -20,7 +22,8 @@ onMounted(async () => {
 })
 
 function handleCardClick(id: string) { router.push(`/teacher/resources/${id}`) }
-function handleDownload(id: string) { window.open(getDownloadUrl(id), '_blank') }
+function handleDownload(id: string) { downloadResource(id).catch(() => {}) }
+function handleSendToClass(id: string) { sendToClassDialog.value?.openForResource(id) }
 </script>
 
 <template>
@@ -42,7 +45,7 @@ function handleDownload(id: string) { window.open(getDownloadUrl(id), '_blank') 
     <ResourceFilter v-if="store.activeTab === 'square'" />
 
     <div v-loading="store.loading" class="grid">
-      <ResourceCard v-for="r in store.resources" :key="r.id" :resource="r" @click="handleCardClick" @download="handleDownload" />
+      <ResourceCard v-for="r in store.resources" :key="r.id" :resource="r" @click="handleCardClick" @download="handleDownload" @send-to-class="handleSendToClass" />
       <el-empty v-if="!store.loading && !store.resources.length" :description="store.activeTab === 'square' ? '资源广场暂无资源' : store.activeTab === 'my' ? '你还没有上传过资源' : '你还没有收藏过资源'">
         <el-button v-if="store.activeTab === 'square' && isTeacher" type="primary" @click="uploadVisible = true">上传资源</el-button>
       </el-empty>
@@ -57,6 +60,7 @@ function handleDownload(id: string) { window.open(getDownloadUrl(id), '_blank') 
     </div>
 
     <ResourceUploadDialog v-model:visible="uploadVisible" @uploaded="uploadVisible = false" />
+    <SendToClassDialog ref="sendToClassDialog" @success="store.fetchResources(store.currentPage)" />
   </div>
 </template>
 

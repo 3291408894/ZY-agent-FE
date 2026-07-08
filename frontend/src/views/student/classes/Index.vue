@@ -8,12 +8,14 @@ import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useClassStore } from '@/stores/class'
 import JoinClassDialog from './components/JoinClassDialog.vue'
+import ClassResourceList from './components/ClassResourceList.vue'
 
 const classStore = useClassStore()
 const joinDialog = ref<InstanceType<typeof JoinClassDialog>>()
 
 const loading = ref(true)
 const error = ref(false)
+const expandedClassId = ref<string | null>(null)
 
 async function loadClasses() {
   error.value = false
@@ -25,6 +27,10 @@ async function loadClasses() {
   } finally {
     loading.value = false
   }
+}
+
+function toggleResources(classId: string) {
+  expandedClassId.value = expandedClassId.value === classId ? null : classId
 }
 
 async function handleLeave(classId: string, className: string) {
@@ -44,6 +50,7 @@ async function handleLeave(classId: string, className: string) {
 
   try {
     await classStore.leaveClass(classId)
+    if (expandedClassId.value === classId) expandedClassId.value = null
     ElMessage.success(`已退出「${className}」`)
   } catch {
     // 错误已在拦截器中处理
@@ -141,6 +148,15 @@ onMounted(() => {
               {{ cls.status !== 'archived' ? '进行中' : '已归档' }}
             </el-tag>
             <el-button
+              type="primary"
+              size="small"
+              text
+              @click="toggleResources(cls.id)"
+            >
+              <el-icon :size="14"><FolderOpened /></el-icon>
+              {{ expandedClassId === cls.id ? '收起资源' : '查看资源' }}
+            </el-button>
+            <el-button
               v-if="cls.status !== 'archived'"
               type="danger"
               size="small"
@@ -151,6 +167,12 @@ onMounted(() => {
             </el-button>
           </div>
         </div>
+        <!-- 班级资源（可展开） -->
+        <ClassResourceList
+          v-if="expandedClassId === cls.id"
+          :class-id="cls.id"
+          :class-name="cls.name"
+        />
       </div>
     </div>
 

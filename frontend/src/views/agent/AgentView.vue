@@ -13,6 +13,8 @@ const agentStore = useAgentStore()
 const chatContainer = ref<HTMLElement>()
 const showThoughtPanel = ref(false)
 const abortController = ref<AbortController | null>(null)
+/** 是否处于"新建对话"状态（未开始对话时显示标识） */
+const isNewSession = ref(false)
 
 // ── 初始化 ──
 onMounted(async () => {
@@ -91,6 +93,7 @@ async function handleSend(message: string) {
               if (evt.session_id) {
                 const newSid: string = evt.session_id
                 agentStore.currentSessionId = newSid
+                isNewSession.value = false
                 if (!agentStore.messagesCache[newSid]) agentStore.messagesCache[newSid] = []
                 agentStore.messagesCache[newSid].push({
                   id: 'a-' + Date.now(), session_id: newSid,
@@ -124,7 +127,10 @@ function handleStop() {
   agentStore.isStreaming = false
 }
 
-function handleSelectSession(sid: string) { agentStore.selectSession(sid) }
+function handleSelectSession(sid: string) {
+  isNewSession.value = false
+  agentStore.selectSession(sid)
+}
 function handleNewSession() {
   handleStop()
   agentStore.currentSessionId = null
@@ -132,6 +138,7 @@ function handleNewSession() {
   agentStore.thoughtChain = []
   agentStore.toolCalls = []
   showThoughtPanel.value = false
+  isNewSession.value = true
 }
 </script>
 
@@ -141,15 +148,24 @@ function handleNewSession() {
     <div class="agent__panels">
       <!-- 左侧：会话列表 -->
       <aside class="agent__sessions">
-        <SessionList @select="handleSelectSession" @new="handleNewSession" />
+        <SessionList
+          :is-new-session="isNewSession"
+          @select="handleSelectSession"
+          @new="handleNewSession"
+        />
       </aside>
 
       <!-- 中间：对话区 -->
       <main class="agent__chat">
+        <!-- 新对话标识 -->
+        <div v-if="isNewSession && agentStore.displayMessages.length === 0" class="new-session-banner">
+          <span class="new-session-banner__icon">✨</span>
+          <span>新对话 — 向 AI 助手提问吧</span>
+        </div>
         <div class="chat-messages" ref="chatContainer">
-          <div v-if="agentStore.displayMessages.length === 0" class="empty-state" style="padding-top:80px">
+          <div v-if="agentStore.displayMessages.length === 0 && !isNewSession" class="empty-state" style="padding-top:80px">
             <div class="empty-state__icon">💬</div>
-            <div class="empty-state__text">开始和 AI 助手对话吧</div>
+            <div class="empty-state__text">选择或新建一个对话</div>
             <p style="color:var(--color-text-placeholder);font-size:var(--font-size-sm);margin-top:var(--spacing-sm)">
               试试说："帮我总结《背影》这篇课文" 或 "给我出 5 道一元二次方程题"
             </p>
@@ -210,6 +226,27 @@ function handleNewSession() {
 
 .chat-messages { flex:1; overflow-y:auto; padding:var(--spacing-base); }
 .chat-input-area { padding:var(--spacing-base); border-top:1px solid var(--color-border-light); background:var(--color-bg-card); }
+
+// ── 新对话横幅 ──
+.new-session-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  margin: 0 var(--spacing-base);
+  background: var(--color-primary-lighter);
+  border: 1px solid var(--color-primary-light);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+  flex-shrink: 0;
+
+  &__icon {
+    font-size: 16px;
+  }
+}
 
 .thought-toggle { position:fixed; right:var(--spacing-xl); bottom:100px; z-index:var(--z-overlay); box-shadow:var(--shadow-lg); }
 </style>
