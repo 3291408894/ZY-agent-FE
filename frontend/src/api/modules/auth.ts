@@ -40,6 +40,8 @@ export function login(data: ILoginRequest) {
       subjects: string[]
       textbook_version: string | null
       avatar_url: string | null
+      school_name: string | null
+      bio: string | null
     }
   }>('/api/v1/auth/login', data)
 }
@@ -75,4 +77,9 @@ export function updateProfile(data: IUpdateProfileRequest) {
 /** 获取学习仪表盘 — GET /api/v1/users/dashboard */
 export function getDashboard() {
   return get<IDashboardData>('/api/v1/users/dashboard')
+}
+
+/** 修改密码（已登录）— PUT /api/v1/users/password */
+export function changePassword(data: { old_password: string; new_password: string }) {
+  return put<null>('/api/v1/users/password', data)
 }

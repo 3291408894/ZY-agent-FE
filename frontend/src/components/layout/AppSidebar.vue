@@ -76,12 +76,6 @@ const studentNavItems: NavItem[] = [
 
 const teacherNavItems: NavItem[] = [
   {
-    path: '/dashboard',
-    title: '工作台',
-    icon: 'Odometer',
-    pbi: 'PBI_02',
-  },
-  {
     path: '/teacher/classes',
     title: '班级管理',
     icon: 'School',
@@ -123,9 +117,7 @@ const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
-const navItems = computed(() =>
-  userStore.isTeacher ? teacherNavItems : studentNavItems
-)
+const navItems = computed(() => (userStore.isTeacher ? teacherNavItems : studentNavItems))
 
 const activeMenu = computed(() => {
   const matched = route.matched
@@ -160,11 +152,7 @@ function navigate(path: string) {
               <component :is="item.icon" />
             </el-icon>
             <span v-show="!collapsed" class="sidebar-nav__text">{{ item.title }}</span>
-            <el-badge
-              v-if="item.upcoming && !collapsed"
-              value="即将"
-              class="sidebar-nav__badge"
-            />
+            <el-badge v-if="item.upcoming && !collapsed" value="即将" class="sidebar-nav__badge" />
           </button>
         </li>
       </ul>
@@ -173,13 +161,13 @@ function navigate(path: string) {
     <!-- ── 底部：Sprint 进度 ── -->
     <div v-show="!collapsed" class="sidebar-footer">
       <div v-if="!userStore.isTeacher" class="sidebar-footer__progress">
-        <div class="sidebar-footer__label">Sprint 1 进度</div>
-        <el-progress :percentage="40" :stroke-width="6" :show-text="false" />
-        <div class="sidebar-footer__hint">基础层 + 第一阶段开发中</div>
+        <div class="sidebar-footer__label">学生端功能</div>
+        <div class="sidebar-footer__hint">已上线</div>
       </div>
+
       <div v-else class="sidebar-footer__progress">
         <div class="sidebar-footer__label">教师端功能</div>
-        <div class="sidebar-footer__hint">班级管理已上线</div>
+        <div class="sidebar-footer__hint">已上线</div>
       </div>
     </div>
   </aside>

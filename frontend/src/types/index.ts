@@ -11,8 +11,12 @@ export interface IRegisterRequest {
   phone?: string
   password: string
   role?: UserRole
-  grade: string
-  subjects: string[]
+  grade?: string
+  subjects?: string[]
+  textbook_version?: string
+  school_name?: string
+  bio?: string
+  nickname?: string
 }
 
 export interface ILoginRequest {
@@ -47,6 +51,8 @@ export interface IUserBrief {
   subjects: string[]
   textbook_version: string | null
   avatar_url: string | null
+  school_name: string | null
+  bio: string | null
   created_at?: string
 }
 
@@ -62,6 +68,8 @@ export interface IUpdateProfileRequest {
   grade?: string
   subjects?: string[]
   textbook_version?: string
+  school_name?: string
+  bio?: string
 }
 
 /** 仪表盘数据 */

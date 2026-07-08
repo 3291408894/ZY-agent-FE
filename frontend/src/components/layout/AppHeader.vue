@@ -118,9 +118,22 @@ defineProps<{
       <el-divider direction="vertical" />
 
       <!-- 配色方案切换 (护眼/经典) -->
-      <el-tooltip :content="themeStore.colorScheme === 'eye-care' ? '当前：护眼配色' : '当前：经典配色'" placement="bottom">
-        <button class="toolbar-btn" @click="themeStore.setColorScheme(themeStore.colorScheme === 'eye-care' ? 'classic' : 'eye-care')">
-          <el-icon :size="18" :color="themeStore.colorScheme === 'eye-care' ? '#5B9BD5' : '#409EFF'">
+      <el-tooltip
+        :content="themeStore.colorScheme === 'eye-care' ? '当前：护眼配色' : '当前：经典配色'"
+        placement="bottom"
+      >
+        <button
+          class="toolbar-btn"
+          @click="
+            themeStore.setColorScheme(
+              themeStore.colorScheme === 'eye-care' ? 'classic' : 'eye-care'
+            )
+          "
+        >
+          <el-icon
+            :size="18"
+            :color="themeStore.colorScheme === 'eye-care' ? '#5B9BD5' : '#409EFF'"
+          >
             <View />
           </el-icon>
         </button>
@@ -153,10 +166,7 @@ defineProps<{
               <el-icon><User /></el-icon>
               个人中心
             </el-dropdown-item>
-            <el-dropdown-item command="settings">
-              <el-icon><Setting /></el-icon>
-              账号设置
-            </el-dropdown-item>
+
             <el-dropdown-item divided command="logout">
               <el-icon><SwitchButton /></el-icon>
               退出登录

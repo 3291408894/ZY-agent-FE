@@ -7,6 +7,7 @@ import type { RouteRecordRaw } from 'vue-router'
 const LoginView = () => import('@/views/auth/LoginView.vue')
 const RegisterView = () => import('@/views/auth/RegisterView.vue')
 const ForgotPasswordView = () => import('@/views/auth/ForgotPasswordView.vue')
+const ProfileView = () => import('@/views/auth/ProfileView.vue')
 const DashboardView = () => import('@/views/dashboard/DashboardView.vue')
 const AgentView = () => import('@/views/agent/AgentView.vue')
 const SummaryView = () => import('@/views/summary/SummaryView.vue')
@@ -55,6 +56,12 @@ const routes: RouteRecordRaw[] = [
   },
 
   // 主要页面（标准布局，需登录）
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: ProfileView,
+    meta: { layout: 'default', requiresAuth: true },
+  },
   {
     path: '/dashboard',
     name: 'Dashboard',
