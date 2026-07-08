@@ -135,13 +135,13 @@ onMounted(() => {
           </div>
           <div class="class-item__actions">
             <el-tag
-              :type="cls.status === 'active' ? 'success' : 'info'"
+              :type="cls.status !== 'archived' ? 'success' : 'info'"
               size="small"
             >
-              {{ cls.status === 'active' ? '进行中' : '已归档' }}
+              {{ cls.status !== 'archived' ? '进行中' : '已归档' }}
             </el-tag>
             <el-button
-              v-if="cls.status === 'active'"
+              v-if="cls.status !== 'archived'"
               type="danger"
               size="small"
               text

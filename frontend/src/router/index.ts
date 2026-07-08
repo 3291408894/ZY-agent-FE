@@ -18,9 +18,16 @@ const NotFoundView = () => import('@/views/NotFoundView.vue')
 // ── 教师端页面 ──
 const TeacherClassesIndex = () => import('@/views/teacher/classes/Index.vue')
 const TeacherClassesDetail = () => import('@/views/teacher/classes/Detail.vue')
+const TeacherAssignmentsIndex = () => import('@/views/teacher/assignments/Index.vue')
+const TeacherAssignmentsDetail = () => import('@/views/teacher/assignments/Detail.vue')
+const TeacherAssignmentsSubmissions = () => import('@/views/teacher/assignments/Submissions.vue')
+const TeacherAssignmentsGrading = () => import('@/views/teacher/assignments/GradingView.vue')
+const TeacherAssignmentsStats = () => import('@/views/teacher/assignments/StatsView.vue')
+const TeacherResourcesIndex = () => import('@/views/teacher/resources/Index.vue')
 
 // ── 学生端页面 ──
 const StudentClassesIndex = () => import('@/views/student/classes/Index.vue')
+const StudentAssignmentsIndex = () => import('@/views/student/assignments/Index.vue')
 
 // ── 路由表 ──
 const routes: RouteRecordRaw[] = [
@@ -96,11 +103,57 @@ const routes: RouteRecordRaw[] = [
     meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
   },
 
+  // ── 教师端：作业管理 ──
+  {
+    path: '/teacher/assignments',
+    name: 'TeacherAssignments',
+    component: TeacherAssignmentsIndex,
+    meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
+  },
+  {
+    path: '/teacher/assignments/:assignmentId',
+    name: 'TeacherAssignmentsDetail',
+    component: TeacherAssignmentsDetail,
+    meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
+  },
+  {
+    path: '/teacher/assignments/:assignmentId/submissions',
+    name: 'TeacherAssignmentsSubmissions',
+    component: TeacherAssignmentsSubmissions,
+    meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
+  },
+  {
+    path: '/teacher/assignments/:assignmentId/submissions/:submissionId',
+    name: 'TeacherAssignmentsGrading',
+    component: TeacherAssignmentsGrading,
+    meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
+  },
+  {
+    path: '/teacher/assignments/:assignmentId/stats',
+    name: 'TeacherAssignmentsStats',
+    component: TeacherAssignmentsStats,
+    meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
+  },
+
+  // ── 教师端：教学资源库 ──
+  {
+    path: '/teacher/resources',
+    name: 'TeacherResources',
+    component: TeacherResourcesIndex,
+    meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
+  },
+
   // ── 学生端页面 ──
   {
     path: '/student/classes',
     name: 'StudentClasses',
     component: StudentClassesIndex,
+    meta: { layout: 'default', requiresAuth: true },
+  },
+  {
+    path: '/student/assignments',
+    name: 'StudentAssignments',
+    component: StudentAssignmentsIndex,
     meta: { layout: 'default', requiresAuth: true },
   },
 

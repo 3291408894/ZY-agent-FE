@@ -4,14 +4,17 @@
 // 展示班级学生列表，支持移除操作
 // ================================================================
 
+import { computed } from 'vue'
 import { ElMessageBox } from 'element-plus'
 import type { IRosterStudent } from '@/types'
 
-defineProps<{
+const props = defineProps<{
   students: IRosterStudent[]
   loading: boolean
   archived: boolean
 }>()
+
+const safeStudents = computed(() => props.students || [])
 
 const emit = defineEmits<{
   remove: [studentId: string, studentName: string]
@@ -52,12 +55,12 @@ function formatDate(dateStr: string) {
     <div class="student-roster__header">
       <h3 class="student-roster__title">
         班级花名册
-        <span class="student-roster__count">（{{ students.length }} 人）</span>
+        <span class="student-roster__count">（{{ safeStudents.length }} 人）</span>
       </h3>
     </div>
 
     <el-table
-      :data="students"
+      :data="safeStudents"
       v-loading="loading"
       stripe
       style="width: 100%"

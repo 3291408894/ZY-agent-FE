@@ -76,7 +76,7 @@ async function handleArchive() {
 }
 
 function goBack() {
-  router.push('/teacher/classes')
+  router.push({ name: 'TeacherClasses' })
 }
 
 onMounted(() => {
@@ -107,7 +107,7 @@ onMounted(() => {
     </div>
 
     <!-- 班级详情内容 -->
-    <template v-else-if="classStore.currentClass">
+    <div v-else-if="classStore.currentClass">
       <!-- 班级基本信息 -->
       <div class="class-info card">
         <div class="class-info__header">
@@ -175,7 +175,7 @@ onMounted(() => {
           @remove="handleRemoveStudent"
         />
       </div>
-    </template>
+    </div>
   </div>
 </template>
 

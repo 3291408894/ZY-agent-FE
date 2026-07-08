@@ -101,7 +101,7 @@ onMounted(() => {
     <!-- 班级卡片网格 -->
     <div v-else class="class-grid">
       <!-- 进行中的班级 -->
-      <template v-if="classStore.activeClasses.length">
+      <div v-if="classStore.activeClasses.length">
         <div class="section-label">
           <span class="section-label__dot" />
           进行中（{{ classStore.activeClasses.length }}）
@@ -149,10 +149,10 @@ onMounted(() => {
             </div>
           </div>
         </div>
-      </template>
+      </div>
 
       <!-- 已归档的班级 -->
-      <template v-if="classStore.archivedClasses.length">
+      <div v-if="classStore.archivedClasses.length">
         <div class="section-label section-label--muted">
           <span class="section-label__dot section-label__dot--muted" />
           已归档（{{ classStore.archivedClasses.length }}）
@@ -188,7 +188,7 @@ onMounted(() => {
             </div>
           </div>
         </div>
-      </template>
+      </div>
     </div>
 
     <!-- 创建班级弹窗 -->

@@ -62,8 +62,8 @@ export const useClassStore = defineStore('class', () => {
   async function fetchTeacherClasses() {
     teacherClassesLoading.value = true
     try {
-      const res = await getTeacherClasses()
-      teacherClasses.value = res.classes
+      const res: any = await getTeacherClasses()
+      teacherClasses.value = res.items || res.classes || []
     } finally {
       teacherClassesLoading.value = false
     }
@@ -86,8 +86,8 @@ export const useClassStore = defineStore('class', () => {
     rosterLoading.value = true
     try {
       const res = await getClassRoster(classId)
-      roster.value = res.roster
-      return res.roster
+      roster.value = (res as any).students || (res as any).roster || (res as any).items || []
+      return roster.value
     } finally {
       rosterLoading.value = false
     }
@@ -173,8 +173,8 @@ export const useClassStore = defineStore('class', () => {
   async function fetchStudentClasses() {
     studentClassesLoading.value = true
     try {
-      const res = await getStudentClasses()
-      studentClasses.value = res.classes
+      const res: any = await getStudentClasses()
+      studentClasses.value = res.items || res.classes || []
     } finally {
       studentClassesLoading.value = false
     }

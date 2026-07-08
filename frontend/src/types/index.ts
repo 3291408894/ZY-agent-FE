@@ -4,10 +4,13 @@
 // 用户 & 认证 (PBI_01)
 // ═══════════════════════════════════════════════════════════
 
+export type UserRole = 'student' | 'teacher' | 'admin'
+
 export interface IRegisterRequest {
   email: string
   phone?: string
   password: string
+  role?: UserRole
   grade: string
   subjects: string[]
 }
@@ -32,12 +35,6 @@ export interface IPaginatedData<T> {
   page_size: number
   total_pages: number
 }
-
-// ═══════════════════════════════════════════════════════════
-// 用户角色类型
-// ═══════════════════════════════════════════════════════════
-
-export type UserRole = 'student' | 'teacher' | 'admin'
 
 /** 用户简要信息（登录响应 / Store 轻量存储） */
 export interface IUserBrief {
@@ -307,6 +304,7 @@ export type ClassStatus = 'active' | 'archived'
 /** 班级信息 */
 export interface IClassItem {
   id: string
+  teacher_id: string
   name: string
   grade: string
   subject: string
@@ -318,9 +316,13 @@ export interface IClassItem {
   updated_at: string
 }
 
-/** 班级列表响应 */
+/** 班级列表响应（教师端） */
 export interface IClassListData {
-  classes: IClassItem[]
+  items: IClassItem[]
+  total: number
+  page: number
+  page_size: number
+  total_pages: number
 }
 
 /** 创建班级请求 */
@@ -339,9 +341,14 @@ export interface IRosterStudent {
   joined_at: string
 }
 
-/** 花名册响应 */
+/** 花名册响应（后端实际用 students 字段） */
 export interface IRosterData {
-  roster: IRosterStudent[]
+  students?: IRosterStudent[]
+  roster?: IRosterStudent[]
+  items?: IRosterStudent[]
+  class_id?: string
+  class_name?: string
+  student_count?: number
 }
 
 /** 重新生成邀请码响应 */
@@ -366,6 +373,33 @@ export interface IJoinClassData {
   class_name: string
 }
 
+export interface IClassStudent {
+  id: string
+  student_id: string
+  nickname: string
+  avatar_url: string | null
+  joined_at: string
+}
+
+export interface IClassDetail extends IClassItem {
+  students: IClassStudent[]
+}
+
+export interface IClassRoster {
+  class_id: string
+  class_name: string
+  student_count: number
+  students: IClassStudent[]
+}
+
+export interface IJoinClassInfo {
+  class_id: string
+  class_name: string
+  teacher_name: string
+  subject: string
+  grade: string
+}
+
 /** 学生端班级信息（不含邀请码） */
 export interface IStudentClassItem {
   id: string
@@ -374,10 +408,270 @@ export interface IStudentClassItem {
   subject: string
   description: string | null
   status: ClassStatus
+  teacher_name?: string
+  student_count?: number
   joined_at: string
 }
 
 /** 学生端班级列表响应 */
 export interface IStudentClassListData {
-  classes: IStudentClassItem[]
+  items: IStudentClassItem[]
+  total: number
+  page: number
+  page_size: number
+  total_pages: number
 }
+
+// ═══════════════════════════════════════════════════════════
+// 作业管理 (功能5)
+// ═══════════════════════════════════════════════════════════
+
+export interface IAssignmentQuestion {
+  number: number
+  stem: string
+  options?: string[]
+  answer: string
+  score: number
+  explanation?: string | null
+  scoring_rubric?: string | null
+}
+
+export interface IAssignmentSection {
+  type: 'objective' | 'subjective'
+  title: string
+  questions: IAssignmentQuestion[]
+}
+
+export interface IAssignmentContent {
+  format: 'mixed' | 'objective_only' | 'subjective_only'
+  sections: IAssignmentSection[]
+}
+
+export interface IAssignmentCreate {
+  class_id: string
+  title: string
+  description?: string | null
+  subject: string
+  content: IAssignmentContent
+  total_score?: number | null
+  due_date: string
+  allow_late_submission?: boolean
+}
+
+export interface IAssignmentItem {
+  id: string
+  class_id: string
+  class_name: string
+  title: string
+  subject: string
+  total_score: number | null
+  due_date: string
+  allow_late_submission: boolean
+  submission_count: number
+  graded_count: number
+  status: string
+  created_at: string
+}
+
+export interface IAssignmentDetail {
+  id: string
+  class_id: string
+  class_name: string
+  teacher_id: string
+  title: string
+  description: string | null
+  subject: string
+  content: IAssignmentContent
+  total_score: number | null
+  due_date: string
+  allow_late_submission: boolean
+  submission_count: number
+  graded_count: number
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+export interface IStudentAnswer {
+  question_number: number
+  answer: string
+}
+
+export interface ISubmissionContent {
+  answers: IStudentAnswer[]
+}
+
+export interface ISubmissionCreate {
+  content: ISubmissionContent
+  attachments?: Array<{ name: string; url: string }> | null
+}
+
+export interface ISubmissionItem {
+  id: string
+  assignment_id: string
+  student_id: string
+  student_name: string
+  student_nickname: string
+  score: number | null
+  status: string
+  submitted_at: string | null
+  graded_at: string | null
+}
+
+export interface IStepFeedback {
+  step: string
+  correct: boolean
+  comment: string
+}
+
+export interface IAIFeedback {
+  score: number
+  overall_comment: string
+  step_feedback: IStepFeedback[]
+  error_analysis: string | null
+  suggested_score: number
+}
+
+export interface ISubmissionDetail {
+  id: string
+  assignment_id: string
+  student_id: string
+  student_name: string
+  content: ISubmissionContent
+  attachments: Array<{ name: string; url: string }> | null
+  score: number | null
+  ai_feedback: IAIFeedback | null
+  teacher_feedback: string | null
+  teacher_id: string | null
+  status: string
+  submitted_at: string | null
+  graded_at: string | null
+}
+
+export interface IAssignmentStats {
+  total_students: number
+  submitted_count: number
+  graded_count: number
+  completion_rate: number
+  average_score: number | null
+  score_distribution: Record<string, number>
+  question_stats: Array<{
+    question_number: number
+    stem: string
+    type: string
+    max_score: number
+    average_score: number | null
+    correct_rate: number | null
+  }>
+}
+
+export interface IStudentAssignmentItem {
+  id: string
+  class_id: string
+  class_name: string
+  title: string
+  subject: string
+  total_score: number | null
+  due_date: string
+  allow_late_submission: boolean
+  submission_count: number
+  graded_count: number
+  status: string
+  my_status: 'pending' | 'submitted' | 'graded' | 'returned'
+  my_submission_id: string | null
+  my_score: number | null
+  created_at: string
+}
+
+export interface IQuestionScore {
+  question_number: number
+  score: number
+}
+
+export interface IGradingRequest {
+  scores?: IQuestionScore[] | null
+  teacher_feedback?: string | null
+  confirm_ai_feedback?: boolean
+}
+
+export interface IGradingResult {
+  score: number
+  max_score: number
+  question_feedback: Array<{
+    question_number: number
+    score: number
+    max_score?: number
+    overall_comment?: string
+  }>
+  teacher_feedback: string | null
+  status: string
+}
+
+export interface IBatchGradeResult {
+  total: number
+  success: number
+  failed: number
+  details: Array<{ submission_id: string; status: string; score?: number; error?: string }>
+}
+
+// ═══════════════════════════════════════════════════════════
+// 教学资源库 (功能3)
+// ═══════════════════════════════════════════════════════════
+
+export type ResourceType = 'courseware' | 'exam_paper' | 'lesson_plan' | 'other'
+export type ResourceVisibility = 'public' | 'private'
+export type ResourceFileType = 'pdf' | 'docx' | 'pptx' | 'xlsx' | 'mp4' | 'image' | 'txt' | 'zip' | 'mp3'
+
+export const RESOURCE_TYPE_LABELS: Record<ResourceType, string> = {
+  courseware: '课件', exam_paper: '试卷', lesson_plan: '教案', other: '其他',
+}
+
+export const FILE_TYPE_LABELS: Record<string, string> = {
+  pdf: 'PDF 文档', docx: 'Word 文档', pptx: 'PPT 课件', xlsx: 'Excel 表格',
+  mp4: '视频', mp3: '音频', image: '图片', txt: '文本', zip: '压缩包',
+}
+
+export const FILE_TYPE_ICONS: Record<string, string> = {
+  pdf: 'Document', docx: 'Document', pptx: 'DataAnalysis', xlsx: 'DataAnalysis',
+  mp4: 'VideoPlay', mp3: 'Headset', image: 'Picture', txt: 'Tickets', zip: 'FolderOpened',
+}
+
+export interface IResourceUploader { id: string; nickname: string; avatar_url: string | null }
+
+export interface ITeachingResource {
+  id: string; title: string; description: string | null
+  subject: string; grade: string
+  resource_type: ResourceType; resource_type_label: string
+  file_type: ResourceFileType; file_type_label: string
+  file_name: string; file_size: number; file_ext: string
+  download_count: number; view_count: number; like_count: number
+  visibility: ResourceVisibility; tags: string[] | null; is_favorited: boolean
+  uploader: IResourceUploader | null; created_at: string; favorited_at?: string
+}
+
+export interface ITeachingResourceDetail extends ITeachingResource {
+  keywords: string | null; status: string; updated_at: string
+}
+
+export interface IResourceListParams {
+  page?: number; page_size?: number; keyword?: string
+  subject?: string; grade?: string; resource_type?: ResourceType
+  file_type?: string; sort_by?: string; sort_order?: string
+}
+
+export interface IResourceFilterOptions {
+  subjects: string[]; grades: string[]
+  resource_types: Array<{ value: string; label: string }>
+  file_types: Array<{ value: string; label: string }>
+}
+
+export interface IFavoriteStatus { is_favorited: boolean; resource_id: string }
+
+export const RESOURCE_ALLOWED_EXTENSIONS = [
+  '.pdf','.doc','.docx','.ppt','.pptx','.xls','.xlsx',
+  '.mp4','.avi','.mov','.mp3','.wav','.flac',
+  '.jpg','.jpeg','.png','.gif','.bmp','.webp','.svg',
+  '.txt','.md','.zip','.rar','.7z',
+]
+
+export const RESOURCE_MAX_SIZE = 50 * 1024 * 1024
