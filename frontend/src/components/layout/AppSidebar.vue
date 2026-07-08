@@ -66,6 +66,12 @@ const studentNavItems: NavItem[] = [
     icon: 'School',
     pbi: 'CLASS',
   },
+  {
+    path: '/student/assignments',
+    title: '我的作业',
+    icon: 'EditPen',
+    pbi: 'ASSIGN',
+  },
 ]
 
 const teacherNavItems: NavItem[] = [
@@ -80,6 +86,18 @@ const teacherNavItems: NavItem[] = [
     title: '班级管理',
     icon: 'School',
     pbi: 'CLASS',
+  },
+  {
+    path: '/teacher/assignments',
+    title: '作业管理',
+    icon: 'EditPen',
+    pbi: 'ASSIGN',
+  },
+  {
+    path: '/teacher/resources',
+    title: '教学资源库',
+    icon: 'FolderOpened',
+    pbi: 'RESOURCE',
   },
 ]
 
