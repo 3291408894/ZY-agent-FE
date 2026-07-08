@@ -24,6 +24,7 @@ const TeacherAssignmentsSubmissions = () => import('@/views/teacher/assignments/
 const TeacherAssignmentsGrading = () => import('@/views/teacher/assignments/GradingView.vue')
 const TeacherAssignmentsStats = () => import('@/views/teacher/assignments/StatsView.vue')
 const TeacherResourcesIndex = () => import('@/views/teacher/resources/Index.vue')
+const LessonPlanView = () => import('@/views/lessonPlan/LessonPlanView.vue')
 
 // ── 学生端页面 ──
 const StudentClassesIndex = () => import('@/views/student/classes/Index.vue')
@@ -140,6 +141,14 @@ const routes: RouteRecordRaw[] = [
     path: '/teacher/resources',
     name: 'TeacherResources',
     component: TeacherResourcesIndex,
+    meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
+  },
+
+  // ── 教师端：智能教案生成 ──
+  {
+    path: '/lesson-plan',
+    name: 'LessonPlan',
+    component: LessonPlanView,
     meta: { layout: 'default', requiresAuth: true, requiredRole: 'teacher' },
   },
 

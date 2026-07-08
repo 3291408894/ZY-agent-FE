@@ -8,7 +8,7 @@ export interface SSECallbacks {
   /** 接收到 knowledge_points 类型事件 */
   onKnowledgePoints?: (points: { name: string; category: string }[]) => void
   /** 流式传输完成 */
-  onDone?: (data: { summary_id?: string; session_id?: string; mode?: string }) => void
+  onDone?: (data: { summary_id?: string; session_id?: string; mode?: string; lesson_plan_id?: string; title?: string }) => void
   /** 出错 */
   onError?: (message: string) => void
 }

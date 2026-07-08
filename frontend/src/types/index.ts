@@ -675,3 +675,74 @@ export const RESOURCE_ALLOWED_EXTENSIONS = [
 ]
 
 export const RESOURCE_MAX_SIZE = 50 * 1024 * 1024
+
+// ═══════════════════════════════════════════════════════════
+// 智能教案生成 (PBI_LP)
+// ═══════════════════════════════════════════════════════════
+
+export interface ILessonPlanSection {
+  title: string
+  content: string
+}
+
+export interface IGenerateLessonPlanRequest {
+  subject: string
+  grade: string
+  textbook_version: string
+  unit_chapter: string
+  class_hours: number
+  teaching_objectives: string
+  requirements?: string
+}
+
+export interface ILessonPlanItem {
+  id: string
+  title: string
+  subject: string
+  grade: string
+  textbook_version: string
+  unit_chapter: string
+  class_hours: number
+  plan_content: string
+  created_at: string
+}
+
+export interface ILessonPlanDetail {
+  id: string
+  title: string
+  subject: string
+  grade: string
+  textbook_version: string
+  unit_chapter: string
+  class_hours: number
+  teaching_objectives: string
+  requirements?: string | null
+  plan_content: string
+  sections: ILessonPlanSection[]
+  created_at: string
+}
+
+export interface ILessonPlanListQuery {
+  page: number
+  page_size: number
+}
+
+export interface ISSELessonPlanDoneEvent {
+  type: 'done'
+  lesson_plan_id: string
+  title: string
+}
+
+/** 常用学科选项 */
+export const SUBJECT_OPTIONS = [
+  '语文', '数学', '英语', '物理', '化学', '生物',
+  '历史', '地理', '政治', '道德与法治', '科学',
+  '信息技术', '美术', '音乐', '体育',
+]
+
+/** 常用年级选项 */
+export const GRADE_OPTIONS = [
+  '一年级', '二年级', '三年级', '四年级', '五年级', '六年级',
+  '七年级', '八年级', '九年级',
+  '高一', '高二', '高三',
+]

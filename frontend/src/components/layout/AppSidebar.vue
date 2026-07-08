@@ -99,6 +99,12 @@ const teacherNavItems: NavItem[] = [
     icon: 'FolderOpened',
     pbi: 'RESOURCE',
   },
+  {
+    path: '/lesson-plan',
+    title: '教案生成',
+    icon: 'Notebook',
+    pbi: 'PBI_LP',
+  },
 ]
 
 // ── Props ──
