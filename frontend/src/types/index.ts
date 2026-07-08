@@ -548,3 +548,65 @@ export interface IBatchGradeResult {
   failed: number
   details: Array<{ submission_id: string; status: string; score?: number; error?: string }>
 }
+
+// ═══════════════════════════════════════════════════════════
+// 教学资源库 (功能3)
+// ═══════════════════════════════════════════════════════════
+
+export type ResourceType = 'courseware' | 'exam_paper' | 'lesson_plan' | 'other'
+export type ResourceVisibility = 'public' | 'private'
+export type ResourceFileType = 'pdf' | 'docx' | 'pptx' | 'xlsx' | 'mp4' | 'image' | 'txt' | 'zip' | 'mp3'
+
+export const RESOURCE_TYPE_LABELS: Record<ResourceType, string> = {
+  courseware: '课件', exam_paper: '试卷', lesson_plan: '教案', other: '其他',
+}
+
+export const FILE_TYPE_LABELS: Record<string, string> = {
+  pdf: 'PDF 文档', docx: 'Word 文档', pptx: 'PPT 课件', xlsx: 'Excel 表格',
+  mp4: '视频', mp3: '音频', image: '图片', txt: '文本', zip: '压缩包',
+}
+
+export const FILE_TYPE_ICONS: Record<string, string> = {
+  pdf: 'Document', docx: 'Document', pptx: 'DataAnalysis', xlsx: 'DataAnalysis',
+  mp4: 'VideoPlay', mp3: 'Headset', image: 'Picture', txt: 'Tickets', zip: 'FolderOpened',
+}
+
+export interface IResourceUploader { id: string; nickname: string; avatar_url: string | null }
+
+export interface ITeachingResource {
+  id: string; title: string; description: string | null
+  subject: string; grade: string
+  resource_type: ResourceType; resource_type_label: string
+  file_type: ResourceFileType; file_type_label: string
+  file_name: string; file_size: number; file_ext: string
+  download_count: number; view_count: number; like_count: number
+  visibility: ResourceVisibility; tags: string[] | null; is_favorited: boolean
+  uploader: IResourceUploader | null; created_at: string; favorited_at?: string
+}
+
+export interface ITeachingResourceDetail extends ITeachingResource {
+  keywords: string | null; status: string; updated_at: string
+}
+
+export interface IResourceListParams {
+  page?: number; page_size?: number; keyword?: string
+  subject?: string; grade?: string; resource_type?: ResourceType
+  file_type?: string; sort_by?: string; sort_order?: string
+}
+
+export interface IResourceFilterOptions {
+  subjects: string[]; grades: string[]
+  resource_types: Array<{ value: string; label: string }>
+  file_types: Array<{ value: string; label: string }>
+}
+
+export interface IFavoriteStatus { is_favorited: boolean; resource_id: string }
+
+export const RESOURCE_ALLOWED_EXTENSIONS = [
+  '.pdf','.doc','.docx','.ppt','.pptx','.xls','.xlsx',
+  '.mp4','.avi','.mov','.mp3','.wav','.flac',
+  '.jpg','.jpeg','.png','.gif','.bmp','.webp','.svg',
+  '.txt','.md','.zip','.rar','.7z',
+]
+
+export const RESOURCE_MAX_SIZE = 50 * 1024 * 1024

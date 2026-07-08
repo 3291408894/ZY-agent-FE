@@ -1,74 +1,71 @@
 <script setup lang="ts">
-/**
- * 教师端 — 教学资源库（占位视图，后端API已就绪）
- */
 import { ref, onMounted } from 'vue'
-import { get, post, del } from '@/api/request'
+import { useRouter } from 'vue-router'
+import { Plus } from '@element-plus/icons-vue'
+import { useTeachingResourceStore } from '@/stores/teachingResource'
+import { useUserStore } from '@/stores/user'
+import ResourceFilter from './components/ResourceFilter.vue'
+import ResourceCard from './components/ResourceCard.vue'
+import ResourceUploadDialog from './components/ResourceUploadDialog.vue'
+import { getDownloadUrl } from '@/api/modules/teachingResource'
 
-interface ResourceItem {
-  id: string
-  title: string
-  subject: string
-  grade: string
-  resource_type: string
-  file_type: string
-  file_name: string
-  file_size: number
-  download_count: number
-  uploader: { id: string; nickname: string } | null
-  created_at: string
-}
+const router = useRouter()
+const store = useTeachingResourceStore()
+const isTeacher = useUserStore().profile?.role === 'teacher' || useUserStore().profile?.role === 'admin'
+const uploadVisible = ref(false)
 
-const resources = ref<ResourceItem[]>([])
-const loading = ref(false)
-const total = ref(0)
-const page = ref(1)
+onMounted(async () => {
+  await store.fetchFilterOptions()
+  await store.fetchResources(1)
+})
 
-async function fetchResources() {
-  loading.value = true
-  try {
-    const data = await get<{ items: ResourceItem[]; total: number }>('/api/v1/teacher/resources', {
-      page: page.value,
-      page_size: 20,
-    })
-    resources.value = data.items
-    total.value = data.total
-  } catch { /* 后端已部署后即可正常加载 */ } finally {
-    loading.value = false
-  }
-}
-
-onMounted(fetchResources)
-
-function formatSize(bytes: number) {
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
+function handleCardClick(id: string) { router.push(`/teacher/resources/${id}`) }
+function handleDownload(id: string) { window.open(getDownloadUrl(id), '_blank') }
 </script>
 
 <template>
-  <div class="resources-page">
-    <h2>教学资源库</h2>
-    <p class="subtitle">课件、试卷、教案等教学资源的管理与分享</p>
+  <div class="page">
+    <div class="page-header">
+      <div>
+        <h1>教学资源库</h1>
+        <p class="sub">上传、分享、下载优质教学资源，共建教学资源广场</p>
+      </div>
+      <el-button v-if="isTeacher" type="primary" @click="uploadVisible = true"><el-icon><Plus /></el-icon> 上传资源</el-button>
+    </div>
 
-    <el-empty v-if="!loading && resources.length === 0" description="资源库功能已就绪，后端API已部署后即可使用">
-      <el-button type="primary" @click="fetchResources">刷新</el-button>
-    </el-empty>
+    <el-tabs v-model="store.activeTab" @tab-change="(t: string) => store.switchTab(t as any)">
+      <el-tab-pane label="资源广场" name="square" />
+      <el-tab-pane v-if="isTeacher" label="我的资源" name="my" />
+      <el-tab-pane label="我的收藏" name="favorites" />
+    </el-tabs>
 
-    <el-table v-else :data="resources" stripe style="width: 100%">
-      <el-table-column prop="title" label="资源标题" min-width="200" />
-      <el-table-column prop="subject" label="学科" width="80" />
-      <el-table-column prop="grade" label="年级" width="100" />
-      <el-table-column prop="file_name" label="文件名" min-width="180" />
-      <el-table-column label="大小" width="80">
-        <template #default="{ row }">{{ formatSize(row.file_size) }}</template>
-      </el-table-column>
-      <el-table-column prop="download_count" label="下载" width="70" />
-    </el-table>
+    <ResourceFilter v-if="store.activeTab === 'square'" />
+
+    <div v-loading="store.loading" class="grid">
+      <ResourceCard v-for="r in store.resources" :key="r.id" :resource="r" @click="handleCardClick" @download="handleDownload" />
+      <el-empty v-if="!store.loading && !store.resources.length" :description="store.activeTab === 'square' ? '资源广场暂无资源' : store.activeTab === 'my' ? '你还没有上传过资源' : '你还没有收藏过资源'">
+        <el-button v-if="store.activeTab === 'square' && isTeacher" type="primary" @click="uploadVisible = true">上传资源</el-button>
+      </el-empty>
+    </div>
+
+    <div v-if="store.total > store.pageSize" style="display:flex;justify-content:center;margin-top:24px">
+      <el-pagination
+        v-model:current-page="store.currentPage" :page-size="store.pageSize" :total="store.total"
+        layout="total, sizes, prev, pager, next" @current-change="store.goToPage"
+        @size-change="(s: number) => { store.pageSize = s; store.goToPage(1) }"
+      />
+    </div>
+
+    <ResourceUploadDialog v-model:visible="uploadVisible" @uploaded="uploadVisible = false" />
   </div>
 </template>
 
-<style scoped lang="scss">
-.resources-page { padding: 24px; max-width: 1100px; margin: 0 auto; }
-.subtitle { color: var(--el-text-color-secondary); margin-bottom: 20px; }
+<style lang="scss" scoped>
+.page { max-width: 1400px; margin: 0 auto; }
+.page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; h1 { margin: 0; font-size: 24px; } .sub { margin: 4px 0 0; font-size: 13px; color: var(--el-text-color-secondary); } }
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; min-height: 200px;
+  @media(max-width:1200px){grid-template-columns:repeat(3,1fr)}
+  @media(max-width:900px){grid-template-columns:repeat(2,1fr)}
+  @media(max-width:600px){grid-template-columns:1fr}
+}
 </style>
