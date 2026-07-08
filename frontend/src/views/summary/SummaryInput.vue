@@ -55,6 +55,8 @@ async function handleGenerate() {
       onDone(data) {
         store.setDone(data.summary_id || '')
         ElMessage.success('总结生成完成！')
+        // 后台静默刷新历史列表
+        store.fetchHistory().catch(() => {})
       },
       onError(msg) {
         store.setStreamError(msg)

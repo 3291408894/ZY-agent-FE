@@ -701,6 +701,7 @@ export interface IGenerateLessonPlanRequest {
   class_hours: number
   teaching_objectives: string
   requirements?: string
+  resource_id?: string | null
 }
 
 export interface ILessonPlanItem {
@@ -785,6 +786,7 @@ export interface IExamPaperGenerateRequest {
   difficulty_ratio: { easy: number; medium: number; hard: number }
   question_structure: IQuestionTypeConfig[]
   focus_instruction?: string
+  resource_id?: string | null
 }
 
 export interface IExamPaperHeader {

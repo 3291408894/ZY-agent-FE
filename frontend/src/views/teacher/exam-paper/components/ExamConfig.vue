@@ -1,10 +1,11 @@
 <script setup lang="ts">
 /** 试卷配置表单 */
 
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { IExamPaperGenerateRequest, ExamType, IQuestionTypeConfig } from '@/types'
 import { EXAM_TYPE_LABELS } from '@/types'
+import { getResourceSelectList } from '@/api/modules/teachingResource'
 import QuestionStructureEditor from './QuestionStructureEditor.vue'
 import DifficultySlider from './DifficultySlider.vue'
 
@@ -14,6 +15,24 @@ const emit = defineEmits<{
 
 const subjects = ['语文', '数学', '英语', '物理', '化学', '生物', '历史', '地理', '政治']
 const grades = ['一年级', '二年级', '三年级', '四年级', '五年级', '六年级', '七年级', '八年级', '九年级', '高一', '高二', '高三']
+
+// ── 教学资源库列表 ──
+interface ResourceOption { id: string; title: string; subject: string; grade: string; resource_type: string }
+const resources = ref<ResourceOption[]>([])
+const resourceLoading = ref(false)
+const selectedResourceId = ref<string | null>(null)
+
+async function loadResources() {
+  resourceLoading.value = true
+  try {
+    const res = await getResourceSelectList()
+    const data = res?.items ?? res?.data?.items ?? []
+    resources.value = Array.isArray(data) ? data : []
+  } catch { resources.value = [] }
+  finally { resourceLoading.value = false }
+}
+
+onMounted(() => { loadResources() })
 
 const form = ref({
   title: '',
@@ -50,6 +69,7 @@ function handleGenerate() {
     ...form.value,
     difficulty_ratio: { ...difficultyRatio.value },
     question_structure: [...questionStructure.value],
+    resource_id: selectedResourceId.value || undefined,
   })
 }
 
@@ -133,6 +153,32 @@ function onTotalScoreChange(val: number) {
         <DifficultySlider v-model="difficultyRatio" />
       </el-form-item>
 
+      <!-- 参考教学资源 -->
+      <el-form-item label="参考资源">
+        <el-select
+          v-model="selectedResourceId"
+          placeholder="选择教学资源库文件作为出题参考..."
+          clearable
+          filterable
+          size="large"
+          style="width:100%"
+          :loading="resourceLoading"
+        >
+          <el-option
+            v-for="r in resources"
+            :key="r.id"
+            :label="`[${r.subject || '无学科'}] ${r.title}`"
+            :value="r.id"
+          >
+            <div class="exam-resource-option">
+              <span class="exam-resource-option__title">{{ r.title }}</span>
+              <span class="exam-resource-option__meta">{{ r.subject }} · {{ r.grade }} · {{ ({ courseware: '课件', exam_paper: '试卷', lesson_plan: '教案', other: '其他' })[r.resource_type] || r.resource_type }}</span>
+            </div>
+          </el-option>
+        </el-select>
+        <div style="margin-top:4px;font-size:12px;color:var(--color-text-placeholder)">可选：选取资源库文件，AI 命题时将参考文件内容</div>
+      </el-form-item>
+
       <!-- 补充说明 -->
       <el-form-item label="重点考点">
         <el-input
@@ -172,5 +218,13 @@ function onTotalScoreChange(val: number) {
     margin-bottom: 24px;
     color: var(--color-text-primary);
   }
+}
+
+.exam-resource-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  &__title { font-size: var(--font-size-sm); color: var(--color-text-primary); }
+  &__meta { font-size: var(--font-size-xs); color: var(--color-text-placeholder); }
 }
 </style>

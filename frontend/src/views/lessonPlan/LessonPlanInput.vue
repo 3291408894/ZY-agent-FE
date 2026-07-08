@@ -2,11 +2,12 @@
 /**
  * 智能教案生成 — 表单输入与流式生成 (PBI_LP)
  */
-import { ref, reactive, nextTick } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useSSE } from '@/composables/useSSE'
 import { getLessonPlanGenerateUrl } from '@/api/modules/lessonPlan'
 import { useLessonPlanStore } from '@/stores/lessonPlan'
+import { getResourceSelectList } from '@/api/modules/teachingResource'
 import { SUBJECT_OPTIONS, GRADE_OPTIONS } from '@/types'
 import LessonPlanResult from './LessonPlanResult.vue'
 
@@ -16,6 +17,23 @@ const emit = defineEmits<{
 
 const store = useLessonPlanStore()
 const { connect, disconnect } = useSSE()
+
+// ── 教学资源库列表 ──
+interface ResourceOption { id: string; title: string; subject: string; grade: string; resource_type: string }
+const resources = ref<ResourceOption[]>([])
+const resourceLoading = ref(false)
+
+async function loadResources() {
+  resourceLoading.value = true
+  try {
+    const res = await getResourceSelectList()
+    const data = res?.items ?? res?.data?.items ?? []
+    resources.value = Array.isArray(data) ? data : []
+  } catch { resources.value = [] }
+  finally { resourceLoading.value = false }
+}
+
+onMounted(() => { loadResources() })
 
 // ── 表单状态 ──
 const formRef = ref()
@@ -27,6 +45,7 @@ const form = reactive({
   class_hours: 1,
   teaching_objectives: '',
   requirements: '',
+  resource_id: null as string | null,
 })
 
 const rules = {
@@ -61,6 +80,7 @@ async function handleGenerate() {
     class_hours: form.class_hours,
     teaching_objectives: form.teaching_objectives,
     requirements: form.requirements || undefined,
+    resource_id: form.resource_id || undefined,
   }, {
     onContent(chunk: string) {
       store.appendContent(chunk)
@@ -166,6 +186,31 @@ function handleRegenerate() {
           </el-col>
         </el-row>
 
+        <el-form-item label="参考教学资源（可选）">
+          <el-select
+            v-model="form.resource_id"
+            placeholder="选择教学资源库中的文件作为参考..."
+            clearable
+            filterable
+            size="large"
+            style="width:100%"
+            :loading="resourceLoading"
+          >
+            <el-option
+              v-for="r in resources"
+              :key="r.id"
+              :label="`[${r.subject || '无学科'}] ${r.title}`"
+              :value="r.id"
+            >
+              <div class="lp-resource-option">
+                <span class="lp-resource-option__title">{{ r.title }}</span>
+                <span class="lp-resource-option__meta">{{ r.subject }} · {{ r.grade }} · {{ ({ courseware: '课件', exam_paper: '试卷', lesson_plan: '教案', other: '其他' })[r.resource_type] || r.resource_type }}</span>
+              </div>
+            </el-option>
+          </el-select>
+          <div class="lp-input__hint" style="margin-top:4px">可选：选取教学资源库中的文件，AI 将参考文件内容生成教案</div>
+        </el-form-item>
+
         <el-form-item label="课时数">
           <el-input-number
             v-model="form.class_hours"
@@ -246,5 +291,14 @@ function handleRegenerate() {
   &__result {
     // 结果区域占满宽度
   }
+}
+
+// ── 资源选项样式 ──
+.lp-resource-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  &__title { font-size: var(--font-size-sm); color: var(--color-text-primary); }
+  &__meta { font-size: var(--font-size-xs); color: var(--color-text-placeholder); }
 }
 </style>

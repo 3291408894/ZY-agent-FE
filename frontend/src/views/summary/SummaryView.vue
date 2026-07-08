@@ -3,18 +3,21 @@
  * 课文总结 — 主页面容器 (PBI_06)
  * 包含两个 Tab：新建总结 / 历史记录
  */
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { useSummaryStore } from '@/stores/summary'
 import SummaryInput from './SummaryInput.vue'
-import SummaryResult from './SummaryResult.vue'
 import SummaryHistory from './SummaryHistory.vue'
 
 type TabName = 'create' | 'history'
 const activeTab = ref<TabName>('create')
+const store = useSummaryStore()
 
-/** 总结完成后切换到结果展示 */
-function onSummaryDone() {
-  activeTab.value = 'create'  // 保持在当前视图，由子组件切换展示
-}
+/** 切换到历史记录时自动刷新列表 */
+watch(activeTab, (tab) => {
+  if (tab === 'history') {
+    store.fetchHistory()
+  }
+})
 </script>
 
 <template>

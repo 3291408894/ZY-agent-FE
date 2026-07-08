@@ -54,3 +54,8 @@ export async function deleteResource(id: string): Promise<void> {
 export async function toggleFavorite(id: string): Promise<IFavoriteStatus> {
   return post<IFavoriteStatus>(`/api/v1/teacher/resources/${id}/favorite`)
 }
+
+/** 获取资源简洁列表（供下拉框使用，不分页取前100条） */
+export async function getResourceSelectList(params?: { resource_type?: string; subject?: string; grade?: string }) {
+  return get<any>('/api/v1/teacher/resources', { page: 1, page_size: 100, ...params })
+}

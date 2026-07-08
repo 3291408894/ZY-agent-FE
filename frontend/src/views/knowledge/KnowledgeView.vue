@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useKnowledge } from '@/composables/useKnowledge'
+import { getFileList } from '@/api/modules/file'
 import KnowledgeGraphCanvas from './components/KnowledgeGraphCanvas.vue'
-import type { IGraphNode, IKnowledgeNode } from '@/types'
+import type { IGraphNode, IKnowledgeNode, IUploadedFile } from '@/types'
 
 const {
   graphList, currentGraph, listLoading, graphLoading, isGenerating,
@@ -12,6 +13,9 @@ const {
 
 const sourceType = ref<'subject' | 'chapter' | 'file'>('subject')
 const sourceInput = ref('')
+const selectedFileId = ref<string | null>(null)
+const fileList = ref<IUploadedFile[]>([])
+const fileLoading = ref(false)
 const nodeDetail = ref<IKnowledgeNode | null>(null)
 const detailVisible = ref(false)
 
@@ -26,8 +30,26 @@ const PRESETS = [
 
 onMounted(() => { fetchGraphList() })
 
+/** 加载文件列表供下拉选择 */
+async function loadFileList() {
+  fileLoading.value = true
+  try {
+    const res = await getFileList(1, 100)
+    fileList.value = (res?.items || []).filter(f => f.parse_status === 'done')
+  } catch { fileList.value = [] }
+  finally { fileLoading.value = false }
+}
+
+/** 切换 sourceType 时自动加载文件列表 */
+watch(sourceType, (t) => { if (t === 'file') loadFileList() })
+
 async function handleGenerate() {
-  try { await generate({ source_type: sourceType.value, source: sourceInput.value }) }
+  const params: { source_type: 'subject' | 'chapter' | 'file'; source: string; file_id?: string | null } = {
+    source_type: sourceType.value,
+    source: sourceType.value === 'file' ? (selectedFileId.value || '') : sourceInput.value,
+    file_id: sourceType.value === 'file' ? selectedFileId.value : null,
+  }
+  try { await generate(params) }
   catch (e: any) { ElMessage.error(e.message || '生成失败') }
 }
 
@@ -68,13 +90,37 @@ async function handleExport() {
       <!-- 生成 -->
       <div style="margin-bottom:var(--spacing-base)">
         <el-select v-model="sourceType" size="small" style="width:100%;margin-bottom:var(--spacing-xs)"><el-option label="学科" value="subject" /><el-option label="章节" value="chapter" /><el-option label="文件" value="file" /></el-select>
-        <el-input v-model="sourceInput" placeholder="输入学科/章节..." size="small" style="margin-bottom:var(--spacing-xs)" />
+        <!-- 文件模式：下拉选择已上传的文件 -->
+        <el-select
+          v-if="sourceType === 'file'"
+          v-model="selectedFileId"
+          placeholder="选择文件..."
+          size="small"
+          filterable
+          clearable
+          style="width:100%;margin-bottom:var(--spacing-xs)"
+          :loading="fileLoading"
+        >
+          <el-option
+            v-for="f in fileList"
+            :key="f.id"
+            :label="f.filename"
+            :value="f.id"
+          >
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:var(--font-size-sm)">{{ f.filename }}</span>
+              <span style="font-size:var(--font-size-xs);color:var(--color-text-placeholder)">{{ f.parse_status === 'done' ? '✅ 已解析' : f.parse_status }}</span>
+            </div>
+          </el-option>
+        </el-select>
+        <!-- 文本模式：手工输入 -->
+        <el-input v-else v-model="sourceInput" placeholder="输入学科/章节..." size="small" style="margin-bottom:var(--spacing-xs)" />
         <el-button type="primary" size="small" :loading="isGenerating" @click="handleGenerate" style="width:100%">生成图谱</el-button>
       </div>
 
       <!-- 预设 -->
       <div class="preset-list">
-        <el-button v-for="p in PRESETS" :key="p.value" size="small" text style="display:block;width:100%;text-align:left;margin-bottom:2px" @click="sourceType = p.type; sourceInput = p.value; handleGenerate()">
+        <el-button v-for="p in PRESETS" :key="p.value" size="small" text style="display:block;width:100%;text-align:left;margin-bottom:2px" @click="sourceType = p.type; sourceInput = p.value; selectedFileId = null; handleGenerate()">
           {{ p.label }}
         </el-button>
       </div>
