@@ -70,7 +70,8 @@ export const useAgentStore = defineStore('agent', () => {
     isLoadingSessions.value = true
     try {
       const data = await getSessions()
-      sessions.value = Array.isArray(data) ? data : []
+      // 后端返回分页格式 { items, total, page, page_size }
+      sessions.value = (data as any)?.items ?? (Array.isArray(data) ? data : [])
     } catch {
       sessions.value = []
     } finally {

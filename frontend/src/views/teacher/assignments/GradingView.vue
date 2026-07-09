@@ -15,7 +15,7 @@ const route = useRoute()
 const router = useRouter()
 const store = useAssignmentStore()
 
-const assignmentId = computed(() => route.params.id as string)
+const assignmentId = computed(() => route.params.assignmentId as string)
 const submissionId = computed(() => route.params.submissionId as string)
 
 const assignment = ref<IAssignmentDetail | null>(null)

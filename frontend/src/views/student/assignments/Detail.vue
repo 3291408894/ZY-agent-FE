@@ -23,13 +23,9 @@ const submitting = ref(false)
 onMounted(async () => {
   try {
     detail.value = await assignmentStore.fetchStudentAssignmentDetail(assignmentId.value)
-    try {
-      mySubmission.value = await assignmentStore.fetchMySubmission(assignmentId.value)
-      if (mySubmission.value) {
-        submitted.value = mySubmission.value.status !== 'returned'
-      }
-    } catch {
-      // 尚未提交
+    mySubmission.value = await assignmentStore.fetchMySubmission(assignmentId.value)
+    if (mySubmission.value) {
+      submitted.value = mySubmission.value.status !== 'returned'
     }
   } catch {
     router.push('/student/assignments')

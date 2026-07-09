@@ -33,6 +33,8 @@ const ExamPaperDetail = () => import('@/views/teacher/exam-paper/Detail.vue')
 // ── 学生端页面 ──
 const StudentClassesIndex = () => import('@/views/student/classes/Index.vue')
 const StudentAssignmentsIndex = () => import('@/views/student/assignments/Index.vue')
+const StudentAssignmentsDetail = () => import('@/views/student/assignments/Detail.vue')
+const StudentAssignmentsResult = () => import('@/views/student/assignments/Result.vue')
 
 // ── 路由表 ──
 const routes: RouteRecordRaw[] = [
@@ -193,6 +195,18 @@ const routes: RouteRecordRaw[] = [
     path: '/student/assignments',
     name: 'StudentAssignments',
     component: StudentAssignmentsIndex,
+    meta: { layout: 'default', requiresAuth: true },
+  },
+  {
+    path: '/student/assignments/:id',
+    name: 'StudentAssignmentsDetail',
+    component: StudentAssignmentsDetail,
+    meta: { layout: 'default', requiresAuth: true },
+  },
+  {
+    path: '/student/assignments/:id/result',
+    name: 'StudentAssignmentsResult',
+    component: StudentAssignmentsResult,
     meta: { layout: 'default', requiresAuth: true },
   },
 

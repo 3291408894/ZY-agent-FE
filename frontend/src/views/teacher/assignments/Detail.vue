@@ -10,7 +10,7 @@ const route = useRoute()
 const router = useRouter()
 const assignmentStore = useAssignmentStore()
 
-const assignmentId = computed(() => route.params.id as string)
+const assignmentId = computed(() => route.params.assignmentId as string)
 
 onMounted(async () => {
   try {

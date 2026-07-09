@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
  * 课文总结 — 历史记录列表 (PBI_06)
- * 展示历史总结记录，支持分页、筛选、查看详情、删除
+ * 独立的 Tab 组件：搜索、筛选、分页、查看详情、删除
  */
 import { ref, onMounted, computed } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
-import { Delete, Loading } from '@element-plus/icons-vue'
+import { Delete, Search, Calendar, Collection, Loading } from '@element-plus/icons-vue'
 import { useSummaryStore } from '@/stores/summary'
 import { SUMMARY_MODE_LABELS } from '@/api/modules/summary'
 import { renderMarkdown } from '@/utils/markdown'
@@ -13,12 +13,20 @@ import type { ISummaryItem, SummaryMode } from '@/types'
 
 const store = useSummaryStore()
 
+// ── 搜索 ──
+const searchKeyword = ref('')
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+function onSearchInput() {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    store.fetchHistory(1, filterMode.value || undefined, searchKeyword.value || undefined)
+  }, 400)
+}
+
 // ── 详情弹窗 ──
 const detailVisible = ref(false)
-const viewingSummaryId = ref<string | null>(null)
-const deletingId = ref<string | null>(null)  // 正在删除的记录 ID
+const deletingId = ref<string | null>(null)
 
-// ── 加载 ──
 onMounted(() => {
   store.fetchHistory()
 })
@@ -26,17 +34,16 @@ onMounted(() => {
 // ── 模式筛选 ──
 const filterMode = ref<SummaryMode | ''>('')
 function handleFilterChange() {
-  store.fetchHistory(1, filterMode.value || undefined)
+  store.fetchHistory(1, filterMode.value || undefined, searchKeyword.value || undefined)
 }
 
 // ── 分页 ──
 function handlePageChange(page: number) {
-  store.fetchHistory(page)
+  store.fetchHistory(page, filterMode.value || undefined, searchKeyword.value || undefined)
 }
 
 // ── 查看详情 ──
 async function handleViewDetail(item: ISummaryItem) {
-  viewingSummaryId.value = item.id
   await store.fetchDetail(item.id)
   detailVisible.value = true
 }
@@ -59,32 +66,40 @@ async function handleDelete(item: ISummaryItem) {
   }
 }
 
-/** 从原文中提取标题（取前30字作为摘要标题） */
 function getTitle(item: ISummaryItem): string {
   const text = item.source_content || '无标题'
-  return text.length > 30 ? text.slice(0, 30).replace(/\n/g, ' ') + '…' : text
+  return text.length > 40 ? text.slice(0, 40).replace(/\n/g, ' ') + '…' : text
 }
 
-/** 格式化日期 */
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr)
-  return d.toLocaleString('zh-CN', {
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  const now = new Date()
+  const diffMs = now.getTime() - d.getTime()
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+  if (diffDays === 0) return '今天 ' + d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+  if (diffDays === 1) return '昨天'
+  if (diffDays < 7) return diffDays + '天前'
+  return d.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
 }
 
-const isEmpty = computed(
-  () => !store.historyLoading && store.historyList.length === 0
-)
+const isEmpty = computed(() => !store.historyLoading && store.historyList.length === 0)
 </script>
 
 <template>
   <div class="summary-history">
-    <!-- ── 筛选栏 ── -->
+    <!-- 工具栏 -->
     <div class="history-toolbar">
+      <el-input
+        v-model="searchKeyword"
+        placeholder="搜索历史总结…"
+        :prefix-icon="Search"
+        clearable
+        size="default"
+        class="history-toolbar__search"
+        @input="onSearchInput"
+        @clear="store.fetchHistory(1, filterMode || undefined)"
+      />
       <el-radio-group
         v-model="filterMode"
         size="small"
@@ -102,19 +117,36 @@ const isEmpty = computed(
       </el-radio-group>
     </div>
 
-    <!-- ── 加载中 ── -->
+    <!-- 加载骨架 -->
     <div v-if="store.historyLoading" class="history-loading">
-      <el-skeleton animated :count="3" />
+      <div v-for="i in 3" :key="i" class="skeleton-card">
+        <el-skeleton animated>
+          <template #template>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <el-skeleton-item variant="text" style="width: 60%; height: 20px;" />
+              <el-skeleton-item variant="text" style="width: 90%; height: 16px;" />
+              <div style="display: flex; gap: 12px;">
+                <el-skeleton-item variant="text" style="width: 80px; height: 24px;" />
+                <el-skeleton-item variant="text" style="width: 100px; height: 24px;" />
+              </div>
+            </div>
+          </template>
+        </el-skeleton>
+      </div>
     </div>
 
-    <!-- ── 空状态 ── -->
-    <el-empty
-      v-else-if="isEmpty"
-      description="暂无总结记录，快去创建你的第一篇总结吧！"
-      :image-size="120"
-    />
+    <!-- 空状态 -->
+    <div v-else-if="isEmpty" class="history-empty">
+      <span class="history-empty__icon">{{ searchKeyword ? '🔍' : '📚' }}</span>
+      <p class="history-empty__title">
+        {{ searchKeyword ? '没有找到匹配的记录' : '还没有总结记录' }}
+      </p>
+      <p class="history-empty__desc">
+        {{ searchKeyword ? '尝试其他搜索词或清除筛选条件' : '切换到「新建总结」标签页，开始你的第一篇智能总结吧！' }}
+      </p>
+    </div>
 
-    <!-- ── 列表 ── -->
+    <!-- 列表 -->
     <div v-else class="history-list">
       <div
         v-for="item in store.historyList"
@@ -123,36 +155,32 @@ const isEmpty = computed(
         @click="handleViewDetail(item)"
       >
         <div class="history-card__body">
-          <div class="history-card__info">
-            <h4 class="history-card__title">{{ getTitle(item) }}</h4>
-            <p class="history-card__preview">{{ item.summary_text }}</p>
-            <div class="history-card__meta">
-              <el-tag
-                size="small"
-                :type="item.mode === 'detailed' ? 'primary' : 'info'"
-                effect="light"
-              >
-                {{ SUMMARY_MODE_LABELS[item.mode] }}
-              </el-tag>
-              <span class="history-card__date">{{ formatDate(item.created_at) }}</span>
-              <span
-                v-if="item.knowledge_points.length > 0"
-                class="history-card__kp-count"
-              >
-                {{ item.knowledge_points.length }} 个知识点
-              </span>
+          <div class="history-card__top">
+            <div class="history-card__mode" :class="`history-card__mode--${item.mode}`">
+              {{ item.mode === 'detailed' ? '📋' : '⚡' }}
+              {{ SUMMARY_MODE_LABELS[item.mode] }}
             </div>
           </div>
+          <h4 class="history-card__title">{{ getTitle(item) }}</h4>
+          <p class="history-card__preview">{{ item.summary_text }}</p>
+          <div class="history-card__footer">
+            <span class="history-card__date">
+              <el-icon><Calendar /></el-icon>
+              {{ formatDate(item.created_at) }}
+            </span>
+            <span v-if="item.knowledge_points.length > 0" class="history-card__kp">
+              <el-icon><Collection /></el-icon>
+              {{ item.knowledge_points.length }} 个知识点
+            </span>
+          </div>
         </div>
-        <div
-          class="history-card__actions"
-          @click.stop
-        >
+        <div class="history-card__actions" @click.stop>
           <el-button
             text
             size="small"
             type="danger"
             :loading="deletingId === item.id"
+            class="history-card__delete-btn"
             @click="handleDelete(item)"
           >
             <el-icon v-if="deletingId !== item.id"><Delete /></el-icon>
@@ -161,7 +189,7 @@ const isEmpty = computed(
       </div>
     </div>
 
-    <!-- ── 分页 ── -->
+    <!-- 分页 -->
     <div v-if="store.historyTotal > store.historyPageSize" class="history-pagination">
       <el-pagination
         v-model:current-page="store.historyPage"
@@ -169,46 +197,66 @@ const isEmpty = computed(
         :total="store.historyTotal"
         :pager-count="5"
         layout="prev, pager, next, total"
+        background
         @current-change="handlePageChange"
       />
     </div>
 
-    <!-- ── 详情弹窗 ── -->
+    <!-- 详情弹窗 -->
     <el-dialog
       v-model="detailVisible"
-      title="总结详情"
       width="85%"
       top="5vh"
       :close-on-click-modal="false"
       destroy-on-close
+      class="detail-dialog"
     >
-      <div v-if="store.detailLoading" style="text-align: center; padding: 40px">
+      <template #header>
+        <div class="detail-dialog__header">
+          <span>📄 总结详情</span>
+        </div>
+      </template>
+
+      <div v-if="store.detailLoading" class="detail-loading">
         <el-icon class="is-loading" :size="32"><Loading /></el-icon>
         <p>加载中…</p>
       </div>
-      <div v-else-if="store.currentDetail">
-        <p class="detail-source-label">📄 原文内容：</p>
-        <div class="detail-source">
-          {{ store.currentDetail.source_content }}
+
+      <div v-else-if="store.currentDetail" class="detail-body">
+        <div class="detail-body__meta">
+          <el-tag
+            :type="store.currentDetail.mode === 'detailed' ? 'primary' : 'info'"
+            effect="light"
+            round
+            size="small"
+          >
+            {{ SUMMARY_MODE_LABELS[store.currentDetail.mode] }}
+          </el-tag>
+          <span class="detail-body__date">{{ formatDate(store.currentDetail.created_at) }}</span>
         </div>
-        <el-divider />
-        <div
-          class="detail-summary"
-          v-html="renderMarkdown(store.currentDetail.summary_text)"
-        />
-        <div
-          v-if="store.currentDetail.knowledge_points.length > 0"
-          class="detail-kp"
-        >
-          <el-divider />
-          <p class="detail-kp__title">🎯 知识点：</p>
-          <div class="detail-kp__tags">
+
+        <div class="detail-block">
+          <div class="detail-block__header"><span>📖</span> 原文内容</div>
+          <div class="detail-block__source">{{ store.currentDetail.source_content }}</div>
+        </div>
+
+        <div class="detail-block">
+          <div class="detail-block__header"><span>✨</span> AI 总结</div>
+          <div class="detail-block__summary" v-html="renderMarkdown(store.currentDetail.summary_text)" />
+        </div>
+
+        <div v-if="store.currentDetail.knowledge_points.length > 0" class="detail-block">
+          <div class="detail-block__header">
+            <span>🧠</span> 知识点 ({{ store.currentDetail.knowledge_points.length }})
+          </div>
+          <div class="detail-block__tags">
             <el-tag
               v-for="kp in store.currentDetail.knowledge_points"
               :key="kp.name"
               effect="light"
+              round
             >
-              {{ kp.category ? `[${kp.category}] ` : '' }}{{ kp.name }}
+              {{ kp.category ? `${kp.category} · ${kp.name}` : kp.name }}
             </el-tag>
           </div>
         </div>
@@ -227,47 +275,117 @@ const isEmpty = computed(
 // ── 工具栏 ──
 .history-toolbar {
   display: flex;
+  justify-content: space-between;
   align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+
+  &__search {
+    width: 280px;
+
+    :deep(.el-input__wrapper) {
+      border-radius: var(--radius-round);
+      background: var(--color-bg-card);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+  }
 }
 
-// ── 加载 ──
+// ── 加载骨架 ──
 .history-loading {
-  padding: var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.skeleton-card {
   background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+}
+
+// ── 空状态 ──
+.history-empty {
+  text-align: center;
+  padding: var(--spacing-xxl) var(--spacing-xl);
+
+  &__icon { font-size: 56px; display: block; margin-bottom: var(--spacing-lg); }
+
+  &__title {
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--color-text);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  &__desc {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    max-width: 400px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
 }
 
 // ── 卡片列表 ──
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
 .history-card {
   display: flex;
   align-items: stretch;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-lg);
-  margin-bottom: var(--spacing-md);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
   cursor: pointer;
   transition: all var(--transition-fast);
 
   &:hover {
-    border-color: var(--color-primary);
+    border-color: var(--color-primary-light);
     box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+
+    .history-card__delete-btn { opacity: 1; }
   }
 
   &__body {
     flex: 1;
     min-width: 0;
-  }
-
-  &__info {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
   }
 
+  &__top { display: flex; align-items: center; gap: var(--spacing-sm); }
+
+  &__mode {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 2px 10px;
+    border-radius: var(--radius-round);
+
+    &--detailed {
+      background: var(--color-primary-light);
+      color: var(--color-primary-darkest);
+    }
+
+    &--brief {
+      background: var(--color-info-light);
+      color: var(--color-info);
+    }
+  }
+
   &__title {
     font-size: 16px;
-    font-weight: 500;
+    font-weight: 600;
     color: var(--color-text);
     margin: 0;
     white-space: nowrap;
@@ -283,29 +401,37 @@ const isEmpty = computed(
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    line-height: 1.6;
+    line-height: 1.7;
   }
 
-  &__meta {
+  &__footer {
     display: flex;
     align-items: center;
-    gap: var(--spacing-md);
+    gap: var(--spacing-lg);
+    margin-top: var(--spacing-xs);
   }
 
   &__date {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     font-size: 12px;
     color: var(--color-text-secondary);
   }
 
-  &__kp-count {
+  &__kp {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     font-size: 12px;
     color: var(--color-primary);
   }
 
-  &__actions {
-    display: flex;
-    align-items: flex-start;
-    padding-left: var(--spacing-md);
+  &__actions { display: flex; align-items: flex-start; padding-left: var(--spacing-md); flex-shrink: 0; }
+
+  &__delete-btn {
+    opacity: 0;
+    transition: opacity var(--transition-fast);
   }
 }
 
@@ -317,56 +443,91 @@ const isEmpty = computed(
 }
 
 // ── 详情弹窗 ──
-.detail-source-label {
-  font-weight: 500;
-  margin: 0 0 var(--spacing-sm);
+.detail-dialog__header {
+  font-size: 18px;
+  font-weight: 600;
   color: var(--color-text);
 }
 
-.detail-source {
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-lg);
-  font-size: var(--font-size-base, 15px);
-  line-height: 1.9;
+.detail-loading {
+  text-align: center;
+  padding: 60px;
   color: var(--color-text-secondary);
-  max-height: 300px;
-  overflow-y: auto;
-  white-space: pre-wrap;
 }
 
-.detail-summary {
-  font-size: var(--font-size-base, 15px);
-  line-height: 1.9;
-  color: var(--color-text);
+.detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
 
-  :deep(h2) {
-    font-size: 19px;
-    color: var(--color-primary);
-    margin: var(--spacing-lg) 0 var(--spacing-md);
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border-light);
   }
 
-  :deep(h3) {
-    font-size: 16px;
-    margin: var(--spacing-md) 0 var(--spacing-sm);
-  }
-
-  :deep(strong) {
-    color: var(--color-primary);
+  &__date {
+    font-size: 13px;
+    color: var(--color-text-secondary);
   }
 }
 
-.detail-kp {
-  &__title {
-    font-weight: 500;
-    margin: 0 0 var(--spacing-md);
+.detail-block {
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: var(--spacing-md);
+  }
+
+  &__source {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    font-size: var(--font-size-base, 15px);
+    line-height: 2;
+    color: var(--color-text-secondary);
+    max-height: 250px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    font-family: 'Georgia', 'Noto Serif SC', 'STSong', 'SimSun', serif;
+  }
+
+  &__summary {
+    font-size: var(--font-size-base, 15px);
+    line-height: 2;
+    color: var(--color-text);
+    padding: var(--spacing-lg);
+    background: var(--color-bg);
+    border-radius: var(--radius-md);
+
+    :deep(h2) { font-size: 19px; color: var(--color-primary); margin: var(--spacing-lg) 0 var(--spacing-md); }
+    :deep(h3) { font-size: 16px; margin: var(--spacing-md) 0 var(--spacing-sm); }
+    :deep(strong) { color: var(--color-primary-darkest); }
+    :deep(ul) { padding-left: var(--spacing-xl); margin: var(--spacing-sm) 0; }
+    :deep(li) { margin-bottom: var(--spacing-sm); }
   }
 
   &__tags {
     display: flex;
     flex-wrap: wrap;
     gap: var(--spacing-sm);
+  }
+}
+
+// ── 响应式 ──
+@media (max-width: 640px) {
+  .history-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+
+    &__search { width: 100%; }
   }
 }
 </style>

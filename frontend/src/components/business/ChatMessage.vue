@@ -6,6 +6,7 @@
 
 import { computed } from 'vue'
 import type { IChatMessage } from '@/types'
+import MathRenderer from '@/components/common/MathRenderer.vue'
 
 // ── Props ──
 interface Props {
@@ -161,7 +162,7 @@ function formatMessageTime(dateStr: string): string {
           {{ message.content }}
         </template>
         <template v-else>
-          <div v-html="renderContent(message.content)"></div>
+          <MathRenderer :text="message.content" />
           <!-- 流式输出时的光标动画 -->
           <span
             v-if="isStreamingMsg && isStreaming"
@@ -311,6 +312,21 @@ function formatMessageTime(dateStr: string): string {
     :deep(.md-list-item) {
       margin-bottom: 2px;
       line-height: var(--line-height-base);
+    }
+
+    // MathRenderer 文本段落
+    :deep(.math-renderer) {
+      font-size: var(--font-size-sm);
+      line-height: var(--line-height-base);
+    }
+
+    // 覆盖 MathRenderer 的 inline/block 公式间距
+    :deep(.math-renderer__inline) {
+      padding: 0 2px;
+    }
+
+    :deep(.math-renderer__block) {
+      margin: 8px 0;
     }
 
     :deep(.inline-code) {
