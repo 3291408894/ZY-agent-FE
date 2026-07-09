@@ -8,6 +8,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useAssignmentStore } from '@/stores/assignment'
+import MathRenderer from '@/components/common/MathRenderer.vue'
 import type { IAssignmentDetail } from '@/types'
 
 const route = useRoute()
@@ -140,16 +141,16 @@ async function handlePublish() {
               {{ q.type === 'objective' ? '客观' : '主观' }} {{ q.score }}分
             </el-tag>
           </div>
-          <div class="q-stem">{{ q.stem }}</div>
+          <div class="q-stem"><MathRenderer :text="q.stem" /></div>
           <div v-if="q.options?.length" class="q-opts">
-            {{ q.options.join('  |  ') }}
+            <MathRenderer :text="q.options.join('  |  ')" />
           </div>
-          <div class="q-ref">✅ 答案：{{ q.answer }}</div>
+          <div class="q-ref">✅ 答案：<MathRenderer :text="q.answer" /></div>
         </div>
 
         <div class="q-mid">
           <div class="student-label">学生作答：</div>
-          <div class="student-ans">{{ studentAnswers[q.number] || '(未作答)' }}</div>
+          <div class="student-ans"><MathRenderer :text="studentAnswers[q.number] || '(未作答)'" /></div>
         </div>
 
         <div class="q-right">

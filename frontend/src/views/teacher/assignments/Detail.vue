@@ -5,6 +5,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAssignmentStore } from '@/stores/assignment'
+import MathRenderer from '@/components/common/MathRenderer.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -73,11 +74,11 @@ function formatDate(d: string) {
         >
           <h4>{{ section.title }} <el-tag size="small" :type="section.type === 'objective' ? 'info' : 'warning'">{{ section.type === 'objective' ? '客观题' : '主观题' }}</el-tag></h4>
           <div v-for="q in section.questions" :key="q.number" class="question-item">
-            <p class="q-stem"><strong>{{ q.number }}.</strong> {{ q.stem }} <span class="q-score">（{{ q.score }}分）</span></p>
+            <p class="q-stem"><strong>{{ q.number }}.</strong> <MathRenderer :text="q.stem" /> <span class="q-score">（{{ q.score }}分）</span></p>
             <p v-if="q.options?.length" class="q-options">
-              <span v-for="(opt, i) in q.options" :key="i">{{ opt }}</span>
+              <span v-for="(opt, i) in q.options" :key="i"><MathRenderer :text="opt" /></span>
             </p>
-            <p class="q-answer"><em>参考答案：{{ q.answer }}</em></p>
+            <p class="q-answer"><em>参考答案：<MathRenderer :text="q.answer" /></em></p>
           </div>
         </div>
       </div>

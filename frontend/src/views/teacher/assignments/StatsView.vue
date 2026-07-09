@@ -5,6 +5,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAssignmentStore } from '@/stores/assignment'
+import MathRenderer from '@/components/common/MathRenderer.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -82,7 +83,11 @@ const distEntries = computed(() => {
         <h3>各题正确率</h3>
         <el-table :data="assignmentStore.stats.question_stats" stripe size="small">
           <el-table-column prop="question_number" label="题号" width="70" />
-          <el-table-column prop="stem" label="题目" min-width="200" />
+          <el-table-column label="题目" min-width="200">
+            <template #default="{ row }">
+              <MathRenderer :text="row.stem" />
+            </template>
+          </el-table-column>
           <el-table-column prop="max_score" label="分值" width="70" />
           <el-table-column label="题型" width="80">
             <template #default="{ row }">{{ row.type === 'objective' ? '客观' : '主观' }}</template>

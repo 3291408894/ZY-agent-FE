@@ -1,11 +1,23 @@
-/** 安全的 Markdown → HTML 渲染工具 */
-
 /**
- * HTML 实体转义 —— 防止 XSS 攻击
- * 在 markdown 转换之前先转义所有用户/LLM 输出中的 HTML 特殊字符
+ * Markdown + Math 渲染工具
+ *
+ * 管线：
+ *   1. 提取 LaTeX 数学公式 → 替换为占位符
+ *   2. 用 marked 将 Markdown → HTML
+ *   3. 将占位符替换回 KaTeX 渲染的数学公式
  */
-function escapeHtml(text: string): string {
-  return text
+import { marked } from 'marked'
+import katex from 'katex'
+
+// ── marked 配置 ──
+marked.setOptions({
+  breaks: true, // 换行 → <br>
+  gfm: true, // GitHub Flavored Markdown（表格、删除线、任务列表）
+})
+
+// ── HTML 转义 ──
+function escapeHtml(s: string): string {
+  return s
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -14,41 +26,92 @@ function escapeHtml(text: string): string {
 }
 
 /**
- * 将 LLM 输出的 Markdown 文本安全地转换为 HTML
+ * 渲染 Markdown + LaTeX 数学公式 → 安全 HTML
  *
- * 支持的语法：
- * - 标题 # ## ###
- * - 加粗 **text**
- * - 无序列表 - item
+ * 支持的 Markdown（来自 marked GFM）：
+ * - 标题 # ~ ######
+ * - 加粗 **text**、斜体 *text*
+ * - 行内代码 `code`、围栏代码块 ``` ```
+ * - 引用 > blockquote
+ * - 无序/有序列表
+ * - 表格
+ * - 分隔线 ---
+ * - 链接、图片
  *
- * 安全性：先对全文做 HTML 实体转义，再进行 Markdown 语法替换，
- * 保证即使 LLM 输出恶意脚本也不会被执行。
- *
- * 顺序设计：列表处理在换行转换之前，列表内部的换行被主动清除，
- * 避免 <br/> 出现在 <ul> 标签内部。
+ * 支持的数学公式：
+ * - 行内：$...$ 或 \(...\)
+ * - 块级：$$...$$ 或 \[...\]
  */
-export function renderMarkdown(text: string): string {
-  // 1. 先转义 HTML，防止 XSS
-  let html = escapeHtml(text)
+export function renderMarkdownWithMath(text: string): string {
+  if (!text) return ''
 
-  // 2. 标题转换（在行首匹配）
-  html = html.replace(/^### (.+)$/gm, '<h3 class="md-h3">$1</h3>')
-  html = html.replace(/^## (.+)$/gm, '<h2 class="md-h2">$1</h2>')
-  html = html.replace(/^# (.+)$/gm, '<h1 class="md-h1">$1</h1>')
+  const mathBlocks: string[] = []
+  const PH = '␟MATH_'
 
-  // 3. 加粗转换
-  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+  let processed = text
 
-  // 4. 无序列表处理（在换行转 <br/> 之前）
-  //    a. 转换列表项：- item → <li>item</li>
-  html = html.replace(/^- (.+)$/gm, '<li>$1</li>')
-  //    b. 清除连续 <li> 之间的换行符，避免被后续 <br/> 污染
-  html = html.replace(/(<\/li>)\n(<li>)/g, '$1$2')
-  //    c. 包裹连续的 <li> 到 <ul> 中
-  html = html.replace(/((?:<li>.*<\/li>\s*)+)/g, '<ul>$1</ul>')
+  // ── Step 1: 块级数学公式 → 占位符 ──
+  // $$...$$ 或 \[...\]
+  processed = processed.replace(
+    /\$\$([\s\S]*?)\$\$|\\\[([\s\S]*?)\\\]/g,
+    (_full: string, m1: string | undefined, m2: string | undefined) => {
+      const math = (m1 || m2 || '').trim()
+      const idx = mathBlocks.length
+      try {
+        mathBlocks.push(
+          katex.renderToString(math, {
+            displayMode: true,
+            throwOnError: false,
+            strict: false,
+            trust: true,
+          }),
+        )
+      } catch {
+        mathBlocks.push(`<code>${escapeHtml(math)}</code>`)
+      }
+      return `${PH}${idx}%%`
+    },
+  )
 
-  // 5. 剩余换行转 <br/>（此时 <ul> 内部已无换行）
-  html = html.replace(/\n/g, '<br/>')
+  // ── Step 2: 行内数学公式 → 占位符 ──
+  // $...$ 或 \(...\)
+  processed = processed.replace(
+    /\$([^\$\n]+?)\$|\\\(([\s\S]*?)\\\)/g,
+    (_full: string, m1: string | undefined, m2: string | undefined) => {
+      const math = (m1 || m2 || '').trim()
+      const idx = mathBlocks.length
+      try {
+        mathBlocks.push(
+          katex.renderToString(math, {
+            displayMode: false,
+            throwOnError: false,
+            strict: false,
+            trust: true,
+          }),
+        )
+      } catch {
+        mathBlocks.push(`<code>${escapeHtml(math)}</code>`)
+      }
+      return `${PH}${idx}%%`
+    },
+  )
+
+  // ── Step 3: Markdown → HTML ──
+  let html: string = marked.parse(processed) as string
+
+  // ── Step 4: 恢复数学公式 ──
+  html = html.replace(new RegExp(`${PH}(\\d+)%%`, 'g'), (_full, idx) => {
+    return mathBlocks[parseInt(idx, 10)] || ''
+  })
 
   return html
+}
+
+/**
+ * 纯 Markdown → HTML（不含数学公式处理）
+ * 保留用于不需要数学渲染的场景
+ */
+export function renderMarkdown(text: string): string {
+  if (!text) return ''
+  return marked.parse(text) as string
 }

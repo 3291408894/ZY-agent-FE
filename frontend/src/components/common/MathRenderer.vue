@@ -63,6 +63,9 @@ const segments = computed<Segment[]>(() => {
   return result
 })
 
+/** 是否包含块级公式 — 决定根元素用 div（块级）还是 span（内联） */
+const hasBlock = computed(() => segments.value.some(s => s.type === 'math-block'))
+
 function renderMath(latex: string, displayMode: boolean): string {
   try {
     return katex.renderToString(latex, {
@@ -85,7 +88,7 @@ function escapeHtml(s: string): string {
 </script>
 
 <template>
-  <span class="math-renderer">
+  <component :is="hasBlock ? 'div' : 'span'" class="math-renderer">
     <template v-for="(seg, i) in segments" :key="i">
       <span v-if="seg.type === 'text'">{{ seg.content }}</span>
       <span
@@ -99,7 +102,7 @@ function escapeHtml(s: string): string {
         v-html="renderMath(seg.content, true)"
       />
     </template>
-  </span>
+  </component>
 </template>
 
 <style lang="scss" scoped>

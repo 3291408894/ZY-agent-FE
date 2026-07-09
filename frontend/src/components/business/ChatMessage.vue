@@ -6,7 +6,7 @@
 
 import { computed } from 'vue'
 import type { IChatMessage } from '@/types'
-import MathRenderer from '@/components/common/MathRenderer.vue'
+import { renderMarkdownWithMath } from '@/utils/markdown'
 
 // ── Props ──
 interface Props {
@@ -28,38 +28,10 @@ const hasToolCalls = computed(
   () => props.message.tool_calls && props.message.tool_calls.length > 0
 )
 
-/** 简单 Markdown 渲染：将 **text** 转为 <strong>，- 列表转 <ul>，换行保持不变 */
-function renderContent(text: string): string {
-  if (!text) return ''
-  let html = text
-    // 粗体
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    // 行内代码
-    .replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>')
-    // 将 ## 标题转为 h3
-    .replace(/^## (.+)$/gm, '<h4 class="md-heading">$1</h4>')
-    // 将 ### 标题转为 h4
-    .replace(/^### (.+)$/gm, '<h5 class="md-heading">$1</h5>')
-    // 无序列表项
-    .replace(/^- (.+)$/gm, '<li class="md-list-item">$1</li>')
-    // 有序列表项
-    .replace(/^\d+\.\s(.+)$/gm, '<li class="md-list-item">$1</li>')
-    // 换行
-    .replace(/\n\n/g, '</p><p class="md-paragraph">')
-    .replace(/\n/g, '<br/>')
-
-  html = '<p class="md-paragraph">' + html + '</p>'
-  // 包裹连续的 li
-  html = html.replace(
-    /(<li class="md-list-item">.*?<\/li>)\s*(?=<li class="md-list-item">)/g,
-    '$1'
-  )
-  html = html.replace(
-    /((?:<li class="md-list-item">.*?<\/li>\s*)+)/g,
-    '<ul class="md-list">$1</ul>'
-  )
-  return html
-}
+/** 将原始 Markdown + LaTeX 渲染为 HTML */
+const renderedContent = computed(() => {
+  return renderMarkdownWithMath(props.message.content)
+})
 
 /** 格式化时间 */
 function formatMessageTime(dateStr: string): string {
@@ -162,7 +134,8 @@ function formatMessageTime(dateStr: string): string {
           {{ message.content }}
         </template>
         <template v-else>
-          <MathRenderer :text="message.content" />
+          <!-- eslint-disable-next-line vue/no-v-html -->
+          <div class="markdown-body" v-html="renderedContent" />
           <!-- 流式输出时的光标动画 -->
           <span
             v-if="isStreamingMsg && isStreaming"
@@ -285,61 +258,134 @@ function formatMessageTime(dateStr: string): string {
   word-break: break-word;
 
   &--markdown {
-    // Markdown 渲染样式
-    :deep(.md-heading) {
-      font-size: var(--font-size-base);
-      font-weight: var(--font-weight-semibold);
-      margin: var(--spacing-sm) 0;
-      color: var(--color-text-primary);
-
-      &:first-child {
-        margin-top: 0;
+    // ── Markdown 渲染样式（marked 输出标准 HTML 标签） ──
+    :deep(.markdown-body) {
+      // 段落
+      p {
+        margin: var(--spacing-xs) 0;
+        line-height: var(--line-height-base);
+        &:first-child { margin-top: 0; }
+        &:last-child { margin-bottom: 0; }
       }
-    }
 
-    :deep(.md-paragraph) {
-      margin: 0;
-      &:empty {
-        display: none;
+      // 标题
+      h1, h2, h3, h4, h5, h6 {
+        margin: var(--spacing-md) 0 var(--spacing-xs);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-primary);
+        line-height: 1.4;
+        &:first-child { margin-top: 0; }
       }
-    }
+      h1 { font-size: 1.3em; }
+      h2 { font-size: 1.15em; }
+      h3 { font-size: 1.05em; }
 
-    :deep(.md-list) {
-      margin: var(--spacing-xs) 0;
-      padding-left: var(--spacing-lg);
-    }
+      // 加粗 / 斜体
+      strong { font-weight: var(--font-weight-semibold); color: var(--color-text-primary); }
+      em { font-style: italic; }
 
-    :deep(.md-list-item) {
-      margin-bottom: 2px;
-      line-height: var(--line-height-base);
-    }
+      // 行内代码
+      code {
+        font-family: var(--font-family-code);
+        font-size: 0.88em;
+        background: rgba(0, 0, 0, 0.06);
+        padding: 1px 6px;
+        border-radius: var(--radius-sm);
+        word-break: break-all;
+      }
 
-    // MathRenderer 文本段落
-    :deep(.math-renderer) {
-      font-size: var(--font-size-sm);
-      line-height: var(--line-height-base);
-    }
+      // 围栏代码块
+      pre {
+        margin: var(--spacing-sm) 0;
+        padding: var(--spacing-md);
+        background: #1e1e2e;
+        border-radius: var(--radius-md);
+        overflow-x: auto;
+        code {
+          background: transparent;
+          padding: 0;
+          color: #cdd6f4;
+          font-size: 0.85em;
+          line-height: 1.6;
+          border-radius: 0;
+        }
+      }
 
-    // 覆盖 MathRenderer 的 inline/block 公式间距
-    :deep(.math-renderer__inline) {
-      padding: 0 2px;
-    }
+      // 列表
+      ul, ol {
+        margin: var(--spacing-xs) 0;
+        padding-left: 1.5em;
+        li {
+          margin-bottom: 2px;
+          line-height: var(--line-height-base);
+          &::marker { color: var(--color-text-placeholder); }
+        }
+      }
 
-    :deep(.math-renderer__block) {
-      margin: 8px 0;
-    }
+      // 引用
+      blockquote {
+        margin: var(--spacing-sm) 0;
+        padding: var(--spacing-xs) var(--spacing-md);
+        border-left: 3px solid var(--color-primary);
+        background: var(--color-primary-lighter);
+        border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+        color: var(--color-text-secondary);
+        p:last-child { margin-bottom: 0; }
+      }
 
-    :deep(.inline-code) {
-      font-family: var(--font-family-code);
-      font-size: 0.9em;
-      background: rgba(0, 0, 0, 0.06);
-      padding: 1px 6px;
-      border-radius: var(--radius-sm);
-    }
+      // 表格
+      table {
+        width: 100%;
+        margin: var(--spacing-sm) 0;
+        border-collapse: collapse;
+        font-size: 0.92em;
+      }
+      thead {
+        background: var(--color-bg-secondary);
+      }
+      th {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        border: 1px solid var(--color-border-light);
+        font-weight: var(--font-weight-semibold);
+        text-align: left;
+      }
+      td {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        border: 1px solid var(--color-border-light);
+      }
+      tr:nth-child(even) td {
+        background: var(--color-bg);
+      }
 
-    :deep(strong) {
-      font-weight: var(--font-weight-semibold);
-      color: var(--color-text-primary);
+      // 分隔线
+      hr {
+        margin: var(--spacing-md) 0;
+        border: none;
+        border-top: 1px solid var(--color-border-light);
+      }
+
+      // 链接
+      a {
+        color: var(--color-primary);
+        text-decoration: underline;
+        &:hover { opacity: 0.85; }
+      }
+
+      // 图片
+      img {
+        max-width: 100%;
+        border-radius: var(--radius-sm);
+      }
+
+      // KaTeX 公式样式
+      .katex-display {
+        margin: var(--spacing-sm) 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+      }
+      .katex {
+        font-size: 1.05em;
+      }
     }
   }
 }
