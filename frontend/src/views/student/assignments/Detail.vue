@@ -15,6 +15,7 @@ import { useAssignmentStore } from '@/stores/assignment'
 import type { IAssignmentContent, ISubmissionContent } from '@/types'
 import AnswerSheet from './components/AnswerSheet.vue'
 import SubmissionTimer from './components/SubmissionTimer.vue'
+import MathRenderer from '@/components/common/MathRenderer.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -175,7 +176,7 @@ const submissionStatusText: Record<string, string> = {
             </el-tag>
             <span class="q-score">（{{ q.score }}分）</span>
           </div>
-          <div class="q-stem">{{ q.stem }}</div>
+          <div class="q-stem"><MathRenderer :text="q.stem" /></div>
 
           <!-- 选择题：显示选项 + 已选答案 -->
           <div v-if="q.type === 'objective' && q.options?.length" class="readonly-options">
@@ -186,7 +187,7 @@ const submissionStatusText: Record<string, string> = {
               :class="{ selected: answerMap[q.number] === String.fromCharCode(65 + oi) }"
             >
               <span class="opt-letter">{{ String.fromCharCode(65 + oi) }}</span>
-              <span class="opt-text">{{ opt }}</span>
+              <span class="opt-text"><MathRenderer :text="opt" /></span>
               <el-icon v-if="answerMap[q.number] === String.fromCharCode(65 + oi)" class="opt-check">
                 <Check />
               </el-icon>
@@ -196,7 +197,7 @@ const submissionStatusText: Record<string, string> = {
           <!-- 主观题：显示答案文本 -->
           <div v-else class="readonly-answer">
             <div class="answer-label">你的答案：</div>
-            <div class="answer-text">{{ answerMap[q.number] || '（未作答）' }}</div>
+            <div class="answer-text"><MathRenderer :text="answerMap[q.number] || '（未作答）'" /></div>
           </div>
         </div>
       </div>

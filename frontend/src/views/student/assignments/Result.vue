@@ -7,6 +7,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAssignmentStore } from '@/stores/assignment'
 import type { IAIFeedback } from '@/types'
+import MathRenderer from '@/components/common/MathRenderer.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -152,7 +153,7 @@ function goBack() {
             </span>
           </div>
 
-          <div class="q-stem">{{ q.stem }}</div>
+          <div class="q-stem"><MathRenderer :text="q.stem" /></div>
 
           <!-- 选择题：选项 + 学生选择 -->
           <div v-if="q.type === 'objective' && q.options?.length" class="q-options">
@@ -163,7 +164,7 @@ function goBack() {
               :class="{ selected: answerMap[q.number] === String.fromCharCode(65 + oi) }"
             >
               <span class="opt-letter">{{ String.fromCharCode(65 + oi) }}</span>
-              <span class="opt-text">{{ opt }}</span>
+              <span class="opt-text"><MathRenderer :text="opt" /></span>
               <el-icon v-if="answerMap[q.number] === String.fromCharCode(65 + oi)" class="opt-check">
                 <Check />
               </el-icon>
@@ -173,7 +174,7 @@ function goBack() {
           <!-- 主观题：答案 -->
           <div v-else class="q-answer">
             <div class="answer-label">你的答案：</div>
-            <div class="answer-text">{{ answerMap[q.number] || '（未作答）' }}</div>
+            <div class="answer-text"><MathRenderer :text="answerMap[q.number] || '（未作答）'" /></div>
           </div>
 
           <!-- 批改反馈 -->

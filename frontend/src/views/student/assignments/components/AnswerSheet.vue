@@ -4,6 +4,7 @@
  */
 import { ref, reactive, computed } from 'vue'
 import type { IAssignmentContent } from '@/types'
+import MathRenderer from '@/components/common/MathRenderer.vue'
 
 const props = defineProps<{
   content: IAssignmentContent
@@ -73,7 +74,7 @@ const answeredCount = computed(() => allQuestions.value.filter((q) => isAnswered
         </el-tag>
         <span class="q-score">（{{ q.score }}分）</span>
       </div>
-      <div class="q-stem">{{ q.stem }}</div>
+      <div class="q-stem"><MathRenderer :text="q.stem" /></div>
 
       <!-- 选择题 -->
       <template v-if="q.type === 'objective' && q.options?.length">
@@ -84,7 +85,7 @@ const answeredCount = computed(() => allQuestions.value.filter((q) => isAnswered
             :value="String.fromCharCode(65 + oi)"
             class="option-item"
           >
-            {{ opt }}
+            <MathRenderer :text="opt" />
           </el-radio>
         </el-radio-group>
       </template>
