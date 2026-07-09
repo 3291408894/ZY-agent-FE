@@ -83,7 +83,7 @@ export const useSummaryStore = defineStore('summary', () => {
   }
 
   /** 加载历史列表 */
-  async function fetchHistory(page?: number, mode?: SummaryMode) {
+  async function fetchHistory(page?: number, mode?: SummaryMode, keyword?: string) {
     historyLoading.value = true
     if (page !== undefined) historyPage.value = page
     if (mode !== undefined) historyModeFilter.value = mode
@@ -93,6 +93,7 @@ export const useSummaryStore = defineStore('summary', () => {
         page: historyPage.value,
         page_size: historyPageSize.value,
         mode: historyModeFilter.value,
+        keyword: keyword || undefined,
       })
       historyList.value = res.items
       historyTotal.value = res.total

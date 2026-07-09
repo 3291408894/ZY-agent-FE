@@ -19,10 +19,10 @@ const segments = computed<Segment[]>(() => {
   if (!text) return []
 
   const result: Segment[] = []
-  let remaining = text
 
-  // Match $$...$$ (block) or $...$ (inline)
-  const mathRegex = /\$\$([\s\S]*?)\$\$|\$([^\$\n]+?)\$/g
+  // Match \(...\) (LaTeX inline), \[...\] (LaTeX block), $$...$$ (block), $...$ (inline)
+  // Groups: 1=\[...\] block, 2=\(...\) inline, 3=$$...$$ block, 4=$...$ inline
+  const mathRegex = /\\\[([\s\S]*?)\\\]|\\\(([\s\S]*?)\\\)|\$\$([\s\S]*?)\$\$|\$([^\$\n]+?)\$/g
 
   let lastIndex = 0
   let match: RegExpExecArray | null
@@ -36,18 +36,17 @@ const segments = computed<Segment[]>(() => {
       })
     }
 
-    // Block math ($$...$$) captured in group 1
+    // Block math: \[...\] (group 1) or $$...$$ (group 3)
     if (match[1] !== undefined) {
-      result.push({
-        type: 'math-block',
-        content: match[1].trim(),
-      })
+      result.push({ type: 'math-block', content: match[1].trim() })
+    } else if (match[3] !== undefined) {
+      result.push({ type: 'math-block', content: match[3].trim() })
     } else if (match[2] !== undefined) {
-      // Inline math ($...$) captured in group 2
-      result.push({
-        type: 'math-inline',
-        content: match[2].trim(),
-      })
+      // Inline math: \(...\) (group 2)
+      result.push({ type: 'math-inline', content: match[2].trim() })
+    } else if (match[4] !== undefined) {
+      // Inline math: $...$ (group 4)
+      result.push({ type: 'math-inline', content: match[4].trim() })
     }
 
     lastIndex = match.index + match[0].length

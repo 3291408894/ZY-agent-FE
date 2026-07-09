@@ -1,34 +1,66 @@
 <script setup lang="ts">
 // ================================================================
-// 学生端 — 班级资源列表组件（在班级卡片下方展开）
+// 学生端 — 班级资源列表组件（含教学资源 + 试卷）
 // ================================================================
 
-import { ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, computed, watch } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
-import { getStudentClassResources, saveResourceToKnowledge } from '@/api/modules/class'
+import { getStudentClassResources, saveResourceToKnowledge, getStudentClassExamPapers, downloadStudentExamPaper } from '@/api/modules/class'
 import { downloadResource } from '@/api/modules/teachingResource'
-import { FILE_TYPE_ICONS, FILE_TYPE_LABELS } from '@/types'
-import type { IClassResourceItem } from '@/types'
+import { FILE_TYPE_ICONS, FILE_TYPE_LABELS, EXAM_TYPE_LABELS, type ExamType } from '@/types'
+import type { IClassResourceItem, IClassExamPaperItem } from '@/types'
 
 const props = defineProps<{ classId: string; className: string }>()
 
 const router = useRouter()
 const resources = ref<IClassResourceItem[]>([])
+const examPapers = ref<IClassExamPaperItem[]>([])
 const loading = ref(false)
 const savingId = ref<string | null>(null)
+const downloadingId = ref<string | null>(null)
 
-async function fetchResources() {
+// 合并两种资源的统一列表
+interface DisplayItem {
+  type: 'resource' | 'exam_paper'
+  createdAt: string
+  data: IClassResourceItem | IClassExamPaperItem
+}
+
+const displayItems = computed<DisplayItem[]>(() => {
+  const resourceItems: DisplayItem[] = resources.value.map(r => ({
+    type: 'resource' as const,
+    createdAt: r.created_at || '',
+    data: r,
+  }))
+  const paperItems: DisplayItem[] = examPapers.value.map(p => ({
+    type: 'exam_paper' as const,
+    createdAt: p.created_at || '',
+    data: p,
+  }))
+  return [...resourceItems, ...paperItems].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  )
+})
+
+async function fetchAll() {
   loading.value = true
   try {
-    const res = await getStudentClassResources(props.classId)
-    resources.value = res?.items || []
+    const [resData, epData] = await Promise.all([
+      getStudentClassResources(props.classId).catch(() => ({ items: [] })),
+      getStudentClassExamPapers(props.classId).catch(() => ({ items: [] })),
+    ])
+    resources.value = resData?.items || []
+    examPapers.value = epData?.items || []
   } catch {
     resources.value = []
+    examPapers.value = []
   } finally {
     loading.value = false
   }
 }
+
+// ── 教学资源操作 ──
 
 async function handleSaveToKnowledge(item: IClassResourceItem) {
   savingId.value = item.resource_id
@@ -42,9 +74,39 @@ async function handleSaveToKnowledge(item: IClassResourceItem) {
   }
 }
 
-function handleDownload(item: IClassResourceItem) {
+function handleDownloadResource(item: IClassResourceItem) {
   downloadResource(item.resource_id, item.resource_file_name).catch(() => {})
 }
+
+// ── 试卷操作 ──
+
+function handleViewExamPaper(item: IClassExamPaperItem) {
+  ElMessageBox.alert(
+    `<div style="line-height:2">
+      <p><strong>标题：</strong>${item.title}</p>
+      <p><strong>学科：</strong>${item.subject}</p>
+      <p><strong>年级：</strong>${item.grade}</p>
+      <p><strong>类型：</strong>${EXAM_TYPE_LABELS[item.exam_type as ExamType] || item.exam_type}</p>
+      <p><strong>总分：</strong>${item.total_score} 分</p>
+    </div>`,
+    '试卷详情',
+    { dangerouslyUseHTMLString: true, confirmButtonText: '关闭' }
+  )
+}
+
+async function handleDownloadExamPaper(item: IClassExamPaperItem) {
+  downloadingId.value = item.exam_paper_id
+  try {
+    await downloadStudentExamPaper(props.classId, item.exam_paper_id)
+    ElMessage.success('下载成功')
+  } catch {
+    // 错误已在拦截器中处理
+  } finally {
+    downloadingId.value = null
+  }
+}
+
+// ── 工具函数 ──
 
 function goToKnowledge() {
   router.push('/knowledge')
@@ -61,59 +123,101 @@ function fmtDate(iso: string | null): string {
   return new Date(iso).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
-// 当 classId 变化时重新加载
-watch(() => props.classId, () => { fetchResources() }, { immediate: true })
+const isResource = (item: DisplayItem): item is DisplayItem & { type: 'resource'; data: IClassResourceItem } =>
+  item.type === 'resource'
+const isExamPaper = (item: DisplayItem): item is DisplayItem & { type: 'exam_paper'; data: IClassExamPaperItem } =>
+  item.type === 'exam_paper'
+
+watch(() => props.classId, () => { fetchAll() }, { immediate: true })
 </script>
 
 <template>
   <div class="class-resources" v-loading="loading">
     <!-- 空状态 -->
-    <div v-if="!loading && !resources.length" class="cr-empty">
+    <div v-if="!loading && !displayItems.length" class="cr-empty">
       <span>该班级暂无共享资源</span>
     </div>
 
-    <!-- 资源列表 -->
+    <!-- 统一列表 -->
     <div v-else class="cr-list">
       <div
-        v-for="item in resources"
-        :key="item.id"
+        v-for="item in displayItems"
+        :key="item.type + '_' + item.data.id"
         class="cr-item"
       >
+        <!-- 图标 -->
         <div class="cr-item__icon">
-          <el-icon :size="28"><component :is="FILE_TYPE_ICONS[item.resource_file_type] || 'Document'" /></el-icon>
+          <el-icon :size="28">
+            <component :is="
+              isResource(item)
+                ? (FILE_TYPE_ICONS[item.data.resource_file_type] || 'Document')
+                : 'EditPen'
+            " />
+          </el-icon>
         </div>
+
+        <!-- 信息 -->
         <div class="cr-item__info">
-          <div class="cr-item__title">{{ item.resource_title }}</div>
+          <div class="cr-item__title">
+            {{ isResource(item) ? item.data.resource_title : item.data.title }}
+          </div>
           <div class="cr-item__meta">
-            <el-tag size="small" type="info">{{ item.resource_subject }}</el-tag>
-            <el-tag size="small" type="info">{{ item.resource_grade }}</el-tag>
-            <span>{{ item.resource_file_name }}</span>
-            <span>{{ fmtSize(item.resource_file_size) }}</span>
-            <span class="cr-item__time">{{ fmtDate(item.created_at) }}</span>
+            <template v-if="isResource(item)">
+              <el-tag size="small" type="info">{{ item.data.resource_subject }}</el-tag>
+              <el-tag size="small" type="info">{{ item.data.resource_grade }}</el-tag>
+              <span>{{ item.data.resource_file_name }}</span>
+              <span>{{ fmtSize(item.data.resource_file_size) }}</span>
+            </template>
+            <template v-else>
+              <el-tag size="small" type="warning">{{ item.data.subject }}</el-tag>
+              <el-tag size="small" type="warning">{{ item.data.grade }}</el-tag>
+              <el-tag size="small" type="info">{{ EXAM_TYPE_LABELS[item.data.exam_type as ExamType] || item.data.exam_type }}</el-tag>
+              <span>{{ item.data.total_score }} 分</span>
+            </template>
+            <span class="cr-item__time">{{ fmtDate(item.createdAt) }}</span>
           </div>
         </div>
+
+        <!-- 操作 -->
         <div class="cr-item__actions">
-          <el-button size="small" type="primary" @click="handleDownload(item)">
-            <el-icon :size="14"><Download /></el-icon>
-            下载
-          </el-button>
-          <el-button
-            size="small"
-            type="success"
-            :loading="savingId === item.resource_id"
-            @click="handleSaveToKnowledge(item)"
-          >
-            <el-icon :size="14"><FolderAdd /></el-icon>
-            保存到知识库
-          </el-button>
+          <template v-if="isResource(item)">
+            <el-button size="small" type="primary" @click="handleDownloadResource(item.data)">
+              <el-icon :size="14"><Download /></el-icon>
+              下载
+            </el-button>
+            <el-button
+              size="small"
+              type="success"
+              :loading="savingId === item.data.resource_id"
+              @click="handleSaveToKnowledge(item.data)"
+            >
+              <el-icon :size="14"><FolderAdd /></el-icon>
+              保存到知识库
+            </el-button>
+          </template>
+          <template v-else>
+            <el-button size="small" type="primary" @click="handleViewExamPaper(item.data)">
+              <el-icon :size="14"><View /></el-icon>
+              查看
+            </el-button>
+            <el-button
+              size="small"
+              type="primary"
+              :loading="downloadingId === item.data.exam_paper_id"
+              @click="handleDownloadExamPaper(item.data)"
+            >
+              <el-icon :size="14"><Download /></el-icon>
+              下载
+            </el-button>
+          </template>
         </div>
       </div>
     </div>
 
     <!-- 底部提示 -->
-    <div v-if="resources.length > 0" class="cr-footer">
+    <div v-if="displayItems.length > 0" class="cr-footer">
       <el-button link type="primary" size="small" @click="goToKnowledge">
-        前往知识库查看 →
+        前往知识库查看 &rarr;
       </el-button>
     </div>
   </div>

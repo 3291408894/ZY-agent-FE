@@ -126,6 +126,7 @@ export interface ISummaryListQuery {
   page: number
   page_size: number
   mode?: SummaryMode
+  keyword?: string
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -717,6 +718,32 @@ export interface ISendToClassResult {
 export interface ISaveToKnowledgeResult {
   file_id: string
   filename: string
+}
+
+// ═══════════════════════════════════════════════════════════
+// 班级试卷分享
+// ═══════════════════════════════════════════════════════════
+
+/** 发送试卷到班级请求 */
+export interface ISendExamPaperToClassRequest {
+  class_ids: string[]
+}
+
+/** 班级试卷列表项 */
+export interface IClassExamPaperItem {
+  id: string
+  class_id: string
+  class_name: string
+  exam_paper_id: string
+  title: string
+  subject: string
+  grade: string
+  exam_type: string
+  total_score: number
+  resource_type: 'exam_paper'
+  shared_by: string
+  shared_by_name: string
+  created_at: string | null
 }
 
 // ═══════════════════════════════════════════════════════════
