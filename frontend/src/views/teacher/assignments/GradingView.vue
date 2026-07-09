@@ -84,7 +84,8 @@ onMounted(async () => {
     await store.fetchSubmissionDetail(assignmentId.value, submissionId.value)
     // 初始化所有题目分数（使用AI建议值或0）
     for (const q of allQuestions.value) {
-      const aiScore = aiFeedbackMap.value[q.number]?.suggested_score ?? aiFeedbackMap.value[q.number]?.score ?? 0
+      const aiScore =
+        aiFeedbackMap.value[q.number]?.suggested_score ?? aiFeedbackMap.value[q.number]?.score ?? 0
       subjectiveScores.value[q.number] = aiScore
     }
   } catch {
@@ -150,7 +151,9 @@ async function handlePublish() {
 
         <div class="q-mid">
           <div class="student-label">学生作答：</div>
-          <div class="student-ans"><MathRenderer :text="studentAnswers[q.number] || '(未作答)'" /></div>
+          <div class="student-ans">
+            <MathRenderer :text="studentAnswers[q.number] || '(未作答)'" />
+          </div>
         </div>
 
         <div class="q-right">
@@ -166,12 +169,13 @@ async function handlePublish() {
             />
             <span class="unit">/ {{ q.score }} 分</span>
           </div>
-          <div v-if="q.type === 'objective' && aiFeedbackMap[q.number]?.score !== undefined" class="ai-hint">
-            AI判分：{{ aiFeedbackMap[q.number]?.score }}分
-            <span v-if="aiFeedbackMap[q.number]?.overall_comment"> — {{ aiFeedbackMap[q.number]?.overall_comment }}</span>
-          </div>
-          <div v-if="q.type === 'subjective' && aiFeedbackMap[q.number]?.overall_comment" class="ai-hint">
-            AI建议：{{ aiFeedbackMap[q.number]?.score }}分 — {{ aiFeedbackMap[q.number]?.overall_comment }}
+
+          <div
+            v-if="q.type === 'subjective' && aiFeedbackMap[q.number]?.overall_comment"
+            class="ai-hint"
+          >
+            AI建议：{{ aiFeedbackMap[q.number]?.score }}分 —
+            {{ aiFeedbackMap[q.number]?.overall_comment }}
           </div>
         </div>
       </div>
@@ -186,12 +190,7 @@ async function handlePublish() {
           style="margin-bottom: 12px"
         />
         <div class="btn-group">
-          <el-button
-            type="primary"
-            size="large"
-            :loading="submitting"
-            @click="handlePublish"
-          >
+          <el-button type="primary" size="large" :loading="submitting" @click="handlePublish">
             发布（{{ computedTotal }}/{{ maxScore }}分）
           </el-button>
         </div>
@@ -212,9 +211,14 @@ async function handlePublish() {
   align-items: center;
   margin-bottom: 16px;
   font-size: 15px;
-  .total-score { font-size: 22px; color: var(--el-color-primary); }
+  .total-score {
+    font-size: 22px;
+    color: var(--el-color-primary);
+  }
 }
-.loading-wrap { padding: 40px; }
+.loading-wrap {
+  padding: 40px;
+}
 
 .q-row {
   display: flex;
@@ -245,13 +249,31 @@ async function handlePublish() {
   align-items: center;
   gap: 6px;
   margin-bottom: 4px;
-  .q-num { font-size: 14px; }
+  .q-num {
+    font-size: 14px;
+  }
 }
-.q-stem { font-size: 14px; line-height: 1.5; margin-bottom: 4px; }
-.q-opts { font-size: 12px; color: var(--el-text-color-secondary); }
-.q-ref { font-size: 12px; color: var(--el-color-success); margin-top: 4px; font-weight: 500; }
+.q-stem {
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+.q-opts {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+.q-ref {
+  font-size: 12px;
+  color: var(--el-color-success);
+  margin-top: 4px;
+  font-weight: 500;
+}
 
-.student-label { font-size: 12px; color: var(--el-text-color-secondary); margin-bottom: 2px; }
+.student-label {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  margin-bottom: 2px;
+}
 .student-ans {
   padding: 8px 10px;
   background: #f0f7ff;
@@ -267,7 +289,10 @@ async function handlePublish() {
   align-items: center;
   gap: 4px;
   justify-content: center;
-  .unit { font-size: 13px; color: var(--el-text-color-secondary); }
+  .unit {
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+  }
 }
 .ai-hint {
   font-size: 11px;

@@ -43,7 +43,10 @@ const distEntries = computed(() => {
       <el-row :gutter="16" class="stat-cards">
         <el-col :span="6">
           <div class="stat-card">
-            <div class="stat-value">{{ assignmentStore.stats.submitted_count }} / {{ assignmentStore.stats.total_students }}</div>
+            <div class="stat-value">
+              {{ assignmentStore.stats.submitted_count }} /
+              {{ assignmentStore.stats.total_students }}
+            </div>
             <div class="stat-label">已提交 / 总人数</div>
           </div>
         </el-col>
@@ -78,22 +81,6 @@ const distEntries = computed(() => {
           </el-col>
         </el-row>
       </div>
-
-      <div class="question-section">
-        <h3>各题正确率</h3>
-        <el-table :data="assignmentStore.stats.question_stats" stripe size="small">
-          <el-table-column prop="question_number" label="题号" width="70" />
-          <el-table-column label="题目" min-width="200">
-            <template #default="{ row }">
-              <MathRenderer :text="row.stem" />
-            </template>
-          </el-table-column>
-          <el-table-column prop="max_score" label="分值" width="70" />
-          <el-table-column label="题型" width="80">
-            <template #default="{ row }">{{ row.type === 'objective' ? '客观' : '主观' }}</template>
-          </el-table-column>
-        </el-table>
-      </div>
     </template>
   </div>
 </template>
@@ -103,11 +90,20 @@ const distEntries = computed(() => {
   padding: 24px;
   max-width: 1100px;
   margin: 0 auto;
-  h2 { margin: 0 0 20px; font-size: 20px; }
+  h2 {
+    margin: 0 0 20px;
+    font-size: 20px;
+  }
 }
-.page-header { margin-bottom: 16px; }
-.loading-wrap { padding: 40px; }
-.stat-cards { margin-bottom: 24px; }
+.page-header {
+  margin-bottom: 16px;
+}
+.loading-wrap {
+  padding: 40px;
+}
+.stat-cards {
+  margin-bottom: 24px;
+}
 .stat-card {
   background: var(--el-bg-color);
   border-radius: 8px;
@@ -118,28 +114,48 @@ const distEntries = computed(() => {
   font-size: 32px;
   font-weight: bold;
   color: var(--el-text-color-primary);
-  &.success { color: var(--el-color-success); }
-  &.primary { color: var(--el-color-primary); }
-  &.warning { color: var(--el-color-warning); }
+  &.success {
+    color: var(--el-color-success);
+  }
+  &.primary {
+    color: var(--el-color-primary);
+  }
+  &.warning {
+    color: var(--el-color-warning);
+  }
 }
-.stat-label { font-size: 13px; color: var(--el-text-color-secondary); margin-top: 4px; }
+.stat-label {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  margin-top: 4px;
+}
 .dist-section {
   background: var(--el-bg-color);
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 16px;
-  h3 { margin: 0 0 12px; }
+  h3 {
+    margin: 0 0 12px;
+  }
 }
 .dist-bar {
   text-align: center;
   padding: 12px 0;
 }
-.dist-label { font-size: 13px; color: var(--el-text-color-secondary); }
-.dist-count { font-size: 20px; font-weight: bold; }
+.dist-label {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+}
+.dist-count {
+  font-size: 20px;
+  font-weight: bold;
+}
 .question-section {
   background: var(--el-bg-color);
   border-radius: 8px;
   padding: 20px;
-  h3 { margin: 0 0 12px; }
+  h3 {
+    margin: 0 0 12px;
+  }
 }
 </style>
