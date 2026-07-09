@@ -20,7 +20,13 @@ const error = ref(false)
 
 /** 提取所有题目（扁平化） */
 const allQuestions = computed(() => {
-  const qs: Array<{ number: number; stem: string; type: string; options?: string[]; score: number }> = []
+  const qs: Array<{
+    number: number
+    stem: string
+    type: string
+    options?: string[]
+    score: number
+  }> = []
   if (!detail.value?.content?.sections) return qs
   for (const section of detail.value.content.sections) {
     for (const q of section.questions) {
@@ -63,7 +69,7 @@ function scoreRate(qNumber: number, qScore: number): number {
 
 /** 正确题数 */
 const correctCount = computed(() => {
-  return allQuestions.value.filter(q => {
+  return allQuestions.value.filter((q) => {
     const fb = feedbackMap.value[q.number]
     return fb && fb.score === q.score
   }).length
@@ -127,19 +133,13 @@ function goBack() {
           <span class="total-score">{{ detail?.total_score ?? '—' }}</span>
         </div>
         <div class="score-label">总分</div>
-        <div class="score-stats">
-          共 {{ allQuestions.length }} 题，答对 {{ correctCount }} 题
-        </div>
+        <div class="score-stats">共 {{ allQuestions.length }} 题，答对 {{ correctCount }} 题</div>
       </div>
 
       <!-- 逐题详情：题目 + 学生答案 + 得分 -->
       <div class="questions-review">
         <h3>答题详情</h3>
-        <div
-          v-for="q in allQuestions"
-          :key="q.number"
-          class="review-item"
-        >
+        <div v-for="q in allQuestions" :key="q.number" class="review-item">
           <div class="q-header">
             <span class="q-num">第{{ q.number }}题</span>
             <el-tag size="small" :type="q.type === 'objective' ? 'info' : 'warning'">
@@ -147,7 +147,9 @@ function goBack() {
             </el-tag>
             <span class="q-score-tag">（{{ q.score }}分）</span>
             <span class="q-score-tag" v-if="feedbackMap[q.number]">
-              得分：<strong :class="feedbackMap[q.number].score === q.score ? 'text-success' : 'text-danger'">
+              得分：<strong
+                :class="feedbackMap[q.number].score === q.score ? 'text-success' : 'text-danger'"
+              >
                 {{ feedbackMap[q.number].score }}
               </strong>
             </span>
@@ -165,7 +167,10 @@ function goBack() {
             >
               <span class="opt-letter">{{ String.fromCharCode(65 + oi) }}</span>
               <span class="opt-text"><MathRenderer :text="opt" /></span>
-              <el-icon v-if="answerMap[q.number] === String.fromCharCode(65 + oi)" class="opt-check">
+              <el-icon
+                v-if="answerMap[q.number] === String.fromCharCode(65 + oi)"
+                class="opt-check"
+              >
                 <Check />
               </el-icon>
             </div>
@@ -174,31 +179,11 @@ function goBack() {
           <!-- 主观题：答案 -->
           <div v-else class="q-answer">
             <div class="answer-label">你的答案：</div>
-            <div class="answer-text"><MathRenderer :text="answerMap[q.number] || '（未作答）'" /></div>
-          </div>
-
-          <!-- 批改反馈 -->
-          <div v-if="feedbackMap[q.number]" class="q-feedback" :class="feedbackMap[q.number].score === q.score ? 'correct' : 'wrong'">
-            <div class="fb-header">
-              <el-icon :size="16" :color="feedbackMap[q.number].score === q.score ? '#67c23a' : '#f56c6c'">
-                <component :is="feedbackMap[q.number].score === q.score ? 'CircleCheck' : 'CircleClose'" />
-              </el-icon>
-              <span>{{ feedbackMap[q.number].overall_comment || (feedbackMap[q.number].score === q.score ? '回答正确' : '回答有误') }}</span>
+            <div class="answer-text">
+              <MathRenderer :text="answerMap[q.number] || '（未作答）'" />
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- AI 综合评价 -->
-      <div v-if="assignmentStore.currentSubmission?.ai_feedback?.overall_comment" class="feedback-section">
-        <h3>AI 综合评价</h3>
-        <div class="overall-comment">{{ assignmentStore.currentSubmission.ai_feedback.overall_comment }}</div>
-      </div>
-
-      <!-- 教师评语 -->
-      <div v-if="assignmentStore.currentSubmission?.teacher_feedback" class="teacher-section">
-        <h3>教师评语</h3>
-        <div class="teacher-comment">{{ assignmentStore.currentSubmission.teacher_feedback }}</div>
       </div>
     </template>
   </div>
@@ -210,8 +195,12 @@ function goBack() {
   max-width: 900px;
   margin: 0 auto;
 }
-.page-header { margin-bottom: 16px; }
-.loading-wrap { padding: 40px; }
+.page-header {
+  margin-bottom: 16px;
+}
+.loading-wrap {
+  padding: 40px;
+}
 .error-state {
   display: flex;
   flex-direction: column;
@@ -226,8 +215,16 @@ function goBack() {
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 16px;
-  h2 { margin: 0 0 10px; }
-  .meta { display: flex; gap: 16px; flex-wrap: wrap; font-size: 14px; color: var(--el-text-color-secondary); }
+  h2 {
+    margin: 0 0 10px;
+  }
+  .meta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-size: 14px;
+    color: var(--el-text-color-secondary);
+  }
 }
 
 // ── 分数卡片 ──
@@ -275,7 +272,10 @@ function goBack() {
   padding: 20px;
   margin-bottom: 16px;
 
-  h3 { margin: 0 0 16px; font-size: 16px; }
+  h3 {
+    margin: 0 0 16px;
+    font-size: 16px;
+  }
 
   .review-item {
     padding: 16px;
@@ -291,10 +291,20 @@ function goBack() {
   gap: 8px;
   margin-bottom: 8px;
   flex-wrap: wrap;
-  .q-num { font-weight: bold; font-size: 14px; }
-  .q-score-tag { color: var(--el-text-color-secondary); font-size: 13px; }
+  .q-num {
+    font-weight: bold;
+    font-size: 14px;
+  }
+  .q-score-tag {
+    color: var(--el-text-color-secondary);
+    font-size: 13px;
+  }
 }
-.q-stem { font-size: 15px; line-height: 1.6; margin-bottom: 12px; }
+.q-stem {
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
 .q-options {
   display: flex;
   flex-direction: column;
@@ -328,11 +338,21 @@ function goBack() {
     background: var(--el-color-primary);
     color: #fff;
   }
-  .opt-text { flex: 1; font-size: 14px; }
-  .opt-check { color: var(--el-color-primary); font-size: 16px; }
+  .opt-text {
+    flex: 1;
+    font-size: 14px;
+  }
+  .opt-check {
+    color: var(--el-color-primary);
+    font-size: 16px;
+  }
 }
 .q-answer {
-  .answer-label { font-size: 13px; color: var(--el-text-color-secondary); margin-bottom: 6px; }
+  .answer-label {
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+    margin-bottom: 6px;
+  }
   .answer-text {
     padding: 12px;
     background: var(--el-bg-color);
@@ -366,16 +386,24 @@ function goBack() {
   }
 }
 
-.text-success { color: #67c23a; }
-.text-danger { color: #f56c6c; }
+.text-success {
+  color: #67c23a;
+}
+.text-danger {
+  color: #f56c6c;
+}
 
 // ── 评价区域 ──
-.feedback-section, .teacher-section {
+.feedback-section,
+.teacher-section {
   background: var(--el-bg-color);
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 16px;
-  h3 { margin: 0 0 12px; font-size: 16px; }
+  h3 {
+    margin: 0 0 12px;
+    font-size: 16px;
+  }
 }
 .overall-comment {
   font-size: 15px;
