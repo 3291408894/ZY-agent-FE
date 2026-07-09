@@ -8,6 +8,8 @@ import type {
   IExamPaperContent,
   IPaginatedData,
   ExportFormat,
+  ISendExamPaperToClassRequest,
+  ISendToClassResult,
 } from '@/types'
 
 const BASE = '/api/v1/teacher/exam-papers'
@@ -69,4 +71,12 @@ export async function exportExamPaper(
   )
   if (!resp.ok) throw new Error('导出失败')
   return resp.blob()
+}
+
+/** 发送试卷到班级 */
+export function sendExamPaperToClass(
+  paperId: string,
+  data: ISendExamPaperToClassRequest,
+): Promise<ISendToClassResult> {
+  return post<ISendToClassResult>(`${BASE}/${paperId}/send-to-class`, data)
 }

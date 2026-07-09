@@ -6,11 +6,13 @@ import { useExamPaperStore } from '@/stores/examPaper'
 import { EXAM_TYPE_LABELS, type ExamType } from '@/types'
 import { exportExamPaper } from '@/api/modules/examPaper'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import SendExamToClassDialog from './SendExamToClassDialog.vue'
 
 const store = useExamPaperStore()
 
 const subjectFilter = ref('')
 const typeFilter = ref('')
+const sendDialog = ref<InstanceType<typeof SendExamToClassDialog>>()
 
 const subjects = ['语文', '数学', '英语', '物理', '化学', '生物', '历史', '地理', '政治']
 
@@ -36,6 +38,10 @@ async function handleDelete(id: string) {
     await store.removePaper(id)
     ElMessage.success('已删除')
   } catch { /* cancelled */ }
+}
+
+function handleSendToClass(paperId: string) {
+  sendDialog.value?.open(paperId)
 }
 
 async function handleExport(id: string) {
@@ -112,13 +118,16 @@ function formatDate(ts: string) {
           {{ formatDate(row.created_at) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="240" fixed="right">
+      <el-table-column label="操作" width="320" fixed="right">
         <template #default="{ row }">
           <el-button size="small" type="primary" link @click="viewDetail(row.id)">
             查看
           </el-button>
           <el-button size="small" type="primary" link @click="handleExport(row.id)">
             下载
+          </el-button>
+          <el-button size="small" type="warning" link @click="handleSendToClass(row.id)">
+            发送到班级
           </el-button>
           <el-button size="small" type="danger" link @click="handleDelete(row.id)">
             删除
@@ -137,6 +146,9 @@ function formatDate(ts: string) {
         @current-change="(p: number) => store.fetchPapers({ page: p })"
       />
     </div>
+
+    <!-- 发送到班级弹窗 -->
+    <SendExamToClassDialog ref="sendDialog" @success="store.fetchPapers()" />
   </div>
 </template>
 

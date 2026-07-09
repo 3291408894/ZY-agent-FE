@@ -15,6 +15,8 @@ import type {
   IJoinClassData,
   IStudentClassItem,
   IStudentClassListData,
+  IClassExamPaperItem,
+  IPaginatedData,
 } from '@/types'
 
 // ================================================================
@@ -92,4 +94,40 @@ export function getStudentClassResources(classId: string, params?: { page?: numb
 /** 学生保存资源到知识库 — POST /api/v1/student/classes/{classId}/resources/{resourceId}/save-to-knowledge */
 export function saveResourceToKnowledge(classId: string, resourceId: string) {
   return post<any>(`/api/v1/student/classes/${classId}/resources/${resourceId}/save-to-knowledge`)
+}
+
+/** 学生查看班级试卷 — GET /api/v1/student/classes/{classId}/exam-papers */
+export function getStudentClassExamPapers(
+  classId: string,
+  params?: { page?: number; page_size?: number },
+): Promise<IPaginatedData<IClassExamPaperItem>> {
+  return get<IPaginatedData<IClassExamPaperItem>>(
+    `/api/v1/student/classes/${classId}/exam-papers`,
+    params,
+  )
+}
+
+/** 学生下载班级试卷 — GET /api/v1/student/classes/{classId}/exam-papers/{paperId}/download */
+export async function downloadStudentExamPaper(classId: string, paperId: string): Promise<void> {
+  const base = import.meta.env.VITE_API_BASE_URL || ''
+  const token = localStorage.getItem('access_token')
+  const res = await fetch(
+    `${base}/api/v1/student/classes/${classId}/exam-papers/${paperId}/download`,
+    { headers: { Authorization: `Bearer ${token || ''}` } },
+  )
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: `下载失败 (${res.status})` }))
+    throw new Error(err?.detail?.message || err?.message || `下载失败 (${res.status})`)
+  }
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  const disposition = res.headers.get('Content-Disposition')
+  const match = disposition?.match(/filename\*?=(?:UTF-8''|"?)([^";]+)/)
+  a.download = match ? decodeURIComponent(match[1]) : `试卷_${paperId.slice(0, 8)}.docx`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
