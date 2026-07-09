@@ -59,7 +59,7 @@ defineProps<{
         </el-icon>
       </button>
 
-      <router-link to="/dashboard" class="app-header__logo">
+      <router-link :to="userStore.isTeacher ? '/teacher/classes' : '/dashboard'" class="app-header__logo">
         <div class="app-header__logo-icon">
           <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect width="40" height="40" rx="10" fill="var(--color-primary)" />

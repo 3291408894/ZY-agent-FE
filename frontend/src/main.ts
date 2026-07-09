@@ -29,4 +29,9 @@ import { useThemeStore } from '@/stores/theme'
 const themeStore = useThemeStore()
 themeStore.init()
 
+// ── 恢复登录态（页面刷新后从 localStorage 恢复 token + profile）──
+import { useUserStore } from '@/stores/user'
+const userStore = useUserStore()
+userStore.restoreAuth()
+
 app.mount('#app')

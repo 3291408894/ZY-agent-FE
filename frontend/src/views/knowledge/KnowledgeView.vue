@@ -21,6 +21,7 @@ const fileList = ref<IUploadedFile[]>([])
 const fileLoading = ref(false)
 const nodeDetail = ref<IKnowledgeNode | null>(null)
 const detailVisible = ref(false)
+const canvasRef = ref<InstanceType<typeof KnowledgeGraphCanvas> | null>(null)
 
 // 已选中的文件名（用于展示）
 const selectedFileName = computed(() => {
@@ -60,6 +61,11 @@ async function loadFileList() {
 /** 切换 sourceType 时刷新文件列表 */
 watch(sourceType, (t) => {
   if (t === 'file') loadFileList()
+})
+
+/** 抽屉关闭时清除画布节点选中状态 */
+watch(detailVisible, (visible) => {
+  if (!visible) canvasRef.value?.clearSelection()
 })
 
 async function handleGenerate() {
@@ -202,7 +208,7 @@ function goToFiles() {
           <span style="font-size:var(--font-size-xs);color:var(--color-text-secondary)">{{ currentGraph.nodes.length }} 节点 · {{ currentGraph.edges.length }} 边</span>
           <el-button size="small" @click="handleExport">导出 PNG</el-button>
         </div>
-        <KnowledgeGraphCanvas :nodes="currentGraph.nodes" :edges="currentGraph.edges" @node-click="handleNodeClick" />
+        <KnowledgeGraphCanvas ref="canvasRef" :nodes="currentGraph.nodes" :edges="currentGraph.edges" @node-click="handleNodeClick" @canvas-click="detailVisible = false" />
       </template>
     </main>
 

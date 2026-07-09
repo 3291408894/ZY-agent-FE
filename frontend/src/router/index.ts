@@ -229,19 +229,30 @@ router.beforeEach((to, _from, next) => {
     return
   }
 
-  // 教师专属页面角色校验（从 localStorage 读取缓存的用户信息）
+  // 从 localStorage 读取缓存的用户信息（用于角色校验）
+  let profile: { role?: string } | null = null
+  try {
+    const cached = localStorage.getItem('user_profile')
+    if (cached) profile = JSON.parse(cached)
+  } catch {
+    // 解析失败则放行，由后端鉴权兜底
+  }
+
+  // 教师专属页面角色校验：非教师/管理员 → 重定向到仪表盘
   if (to.meta.requiredRole === 'teacher') {
-    try {
-      const cached = localStorage.getItem('user_profile')
-      if (cached) {
-        const profile = JSON.parse(cached)
-        if (profile.role !== 'teacher' && profile.role !== 'admin') {
-          next('/dashboard')
-          return
-        }
-      }
-    } catch {
-      // 解析失败则放行，由后端鉴权兜底
+    if (profile && profile.role !== 'teacher' && profile.role !== 'admin') {
+      next('/dashboard')
+      return
+    }
+  }
+
+  // 教师访问纯学生页面时重定向到教师首页
+  // （教师不应看到学生专属的学习概览、AI助手等页面）
+  const studentOnlyPaths = ['/student/classes', '/student/assignments']
+  if (profile && (profile.role === 'teacher' || profile.role === 'admin')) {
+    if (studentOnlyPaths.includes(to.path)) {
+      next('/teacher/classes')
+      return
     }
   }
 

@@ -56,7 +56,7 @@ function fmtDate(iso: string): string {
           <el-icon :size="16"><Download /></el-icon>
         </el-button>
         <el-button
-          v-if="userStore.isTeacher && resource.uploader?.id === userStore.profile?.id"
+          v-if="userStore.isTeacher"
           link
           size="small"
           type="success"

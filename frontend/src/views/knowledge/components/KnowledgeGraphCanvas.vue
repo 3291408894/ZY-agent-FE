@@ -25,11 +25,13 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   (e: 'node-click', nodeId: string, node: IGraphNode): void
+  (e: 'canvas-click'): void
   (e: 'canvas-ready'): void
 }>()
 
 const chartContainer = ref<HTMLDivElement>()
 const hoveredNodeId = ref<string | null>(null)
+const selectedNodeId = ref<string | null>(null)
 const isDark = ref(false)
 let chartInstance: echarts.ECharts | null = null
 let resizeObserver: ResizeObserver | null = null
@@ -182,13 +184,37 @@ function handleThemeChange() {
 
 function bindEvents() {
   if (!chartInstance) return
+
+  // ── ECharts 层事件：仅处理节点点击 ──
   chartInstance.off('click')
   chartInstance.on('click', (params: any) => {
     if (params.dataType === 'node') {
-      const node = props.nodes.find((n) => n.id === params.data?.id)
-      if (node) emit('node-click', params.data.id, node)
+      const clickedId = params.data?.id
+      // 点击已选中的节点 → 取消选中
+      if (selectedNodeId.value === clickedId) {
+        selectedNodeId.value = null
+        downplayAll()
+        emit('canvas-click')
+        return
+      }
+      selectedNodeId.value = clickedId
+      const node = props.nodes.find((n) => n.id === clickedId)
+      if (node) emit('node-click', clickedId, node)
     }
   })
+
+  // ── ZRender 层事件：捕获空白区域点击（roam 不会吞掉 zr 级事件）──
+  const zr = chartInstance.getZr()
+  zr.off('click')
+  zr.on('click', (e: any) => {
+    // target 为 undefined → 点击的是空白区域
+    if (!e.target && selectedNodeId.value) {
+      selectedNodeId.value = null
+      downplayAll()
+      emit('canvas-click')
+    }
+  })
+
   chartInstance.off('mouseover')
   chartInstance.on('mouseover', (params: any) => {
     if (params.dataType === 'node') hoveredNodeId.value = params.data?.id || null
@@ -249,7 +275,12 @@ onBeforeUnmount(() => {
   chartInstance = null
 })
 
-defineExpose({ resize, exportAsImage, highlightNode, downplayAll })
+defineExpose({ resize, exportAsImage, highlightNode, downplayAll, clearSelection })
+
+function clearSelection() {
+  selectedNodeId.value = null
+  downplayAll()
+}
 </script>
 
 <template>

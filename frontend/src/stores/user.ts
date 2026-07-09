@@ -50,6 +50,21 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem('user_profile')
   }
 
+  /** 从 localStorage 恢复登录态（页面刷新时调用） */
+  function restoreAuth() {
+    const savedToken = localStorage.getItem('access_token')
+    const savedProfile = localStorage.getItem('user_profile')
+    if (savedToken && savedProfile) {
+      token.value = savedToken
+      try {
+        profile.value = JSON.parse(savedProfile)
+      } catch {
+        // 缓存数据损坏，清除
+        clearAuth()
+      }
+    }
+  }
+
   // ================================================================
   // Actions — 档案
   // ================================================================
@@ -100,6 +115,7 @@ export const useUserStore = defineStore('user', () => {
     // actions
     setAuth,
     clearAuth,
+    restoreAuth,
     setProfile,
     updateProfileLocal,
     fetchProfile,

@@ -15,10 +15,12 @@ export function useAuth() {
   const isLoggedIn = computed(() => userStore.isLoggedIn)
   const currentUser = computed(() => userStore.profile)
 
-  /** 登录成功后跳转 */
+  /** 登录成功后跳转（按角色分流） */
   function onLoginSuccess(token: string, user: IUserBrief) {
     userStore.setAuth(token, user)
-    const redirect = (router.currentRoute.value.query.redirect as string) || '/dashboard'
+    // 有指定重定向目标则优先；否则按角色分流：教师 → 班级管理，学生 → 仪表盘
+    const redirect = (router.currentRoute.value.query.redirect as string)
+      || (user.role === 'teacher' || user.role === 'admin' ? '/teacher/classes' : '/dashboard')
     router.push(redirect)
   }
 

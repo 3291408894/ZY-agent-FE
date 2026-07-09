@@ -35,7 +35,7 @@ async function handleLogin() {
   try {
     const res = await login(form)
     onLoginSuccess(res.access_token, res.user)
-    ElMessage.success(`欢迎回来，${res.user.nickname || '同学'}`)
+    ElMessage.success(`欢迎回来，${res.user.nickname || (res.user.role === 'teacher' ? '老师' : '同学')}`)
   } catch (e: any) {
     errorMsg.value = e?.response?.data?.message || e?.message || '登录失败，请重试'
   } finally {

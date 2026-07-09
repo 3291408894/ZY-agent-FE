@@ -85,7 +85,7 @@ async function handleDelete() {
 
           <div class="side-card">
             <el-button type="primary" size="large" style="width:100%" @click="handleDownload"><el-icon><Download /></el-icon> 下载资源</el-button>
-            <el-button v-if="userStore.isTeacher && isOwner" size="large" style="width:100%;margin-top:8px" type="success" @click="handleSendToClass">
+            <el-button v-if="userStore.isTeacher" size="large" style="width:100%;margin-top:8px" type="success" @click="handleSendToClass">
               <el-icon><Position /></el-icon> 发送到班级
             </el-button>
             <el-button size="large" style="width:100%;margin-top:8px" :type="store.currentDetail.is_favorited ? 'warning' : 'default'" @click="store.toggleFav(store.currentDetail.id)">
