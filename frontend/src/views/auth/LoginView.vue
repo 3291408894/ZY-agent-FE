@@ -68,10 +68,10 @@ async function handleLogin() {
       <!-- 表单 -->
       <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @submit.prevent="handleLogin">
         <el-form-item label="邮箱 / 手机号" prop="login">
-          <el-input v-model="form.login" placeholder="请输入邮箱或手机号" size="large" />
+          <el-input v-model="form.login" placeholder="请输入邮箱或手机号" size="large" autocomplete="off" />
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="form.password" type="password" placeholder="请输入密码" show-password size="large" @keyup.enter="handleLogin" />
+          <el-input v-model="form.password" type="password" placeholder="请输入密码" show-password size="large" autocomplete="off" @keyup.enter="handleLogin" />
         </el-form-item>
         <div class="auth-card__options">
           <router-link to="/forgot-password" class="auth-card__link">忘记密码？</router-link>

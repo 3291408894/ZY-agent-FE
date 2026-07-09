@@ -110,8 +110,17 @@ function onTabChange() {
   border-radius: 8px;
   padding: 16px 20px;
   cursor: pointer;
-  transition: box-shadow 0.2s;
-  &:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  transition: all 0.2s ease;
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+    border-color: var(--el-color-primary-light-5);
+  }
+  &:active {
+    border-color: var(--el-color-primary);
+    box-shadow: 0 0 0 2px var(--el-color-primary-light-5);
+    transform: translateY(0);
+  }
 }
 .card-left {
   h4 { margin: 0 0 6px; font-size: 15px; }

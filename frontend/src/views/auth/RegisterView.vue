@@ -43,6 +43,12 @@ const totalSteps = computed(() => currentSteps.value.length - 1)
 
 const step = ref(0)
 
+/** 选择身份 */
+function selectRole(role: 'student' | 'teacher') {
+  form.role = role
+  errorMsg.value = ''
+}
+
 function nextStep() {
   if (step.value === 0 && !form.role) {
     ElMessage.warning('请先选择您的身份')
@@ -135,12 +141,12 @@ async function handleSubmit() {
       <div v-if="step === 0" class="step-body">
         <p class="step-hint">请选择您的身份，我们将为您提供专属服务</p>
         <div class="role-cards">
-          <button class="role-card" :class="{ active: form.role === 'student' }" @click="form.role = 'student'">
+          <button class="role-card" :class="{ active: form.role === 'student' }" @click="selectRole('student')">
             <div class="role-card__icon">🎒</div>
             <span class="role-card__label">我是学生</span>
             <span class="role-card__hint">加入班级，完成作业，AI 辅助学习</span>
           </button>
-          <button class="role-card" :class="{ active: form.role === 'teacher' }" @click="form.role = 'teacher'">
+          <button class="role-card" :class="{ active: form.role === 'teacher' }" @click="selectRole('teacher')">
             <div class="role-card__icon">📚</div>
             <span class="role-card__label">我是教师</span>
             <span class="role-card__hint">管理班级，布置作业，智能备课</span>
@@ -152,10 +158,10 @@ async function handleSubmit() {
       <!-- Step 1: 基本信息（公共） -->
       <!-- ================================================================ -->
       <div v-if="step === 1" class="step-body">
-        <el-input v-model="form.email" placeholder="邮箱" size="large" style="margin-bottom:12px" />
-        <el-input v-model="form.phone" placeholder="手机号（选填）" size="large" style="margin-bottom:12px" />
-        <el-input v-model="form.password" type="password" placeholder="密码（至少 8 位）" show-password size="large" style="margin-bottom:12px" />
-        <el-input v-model="form.confirmPassword" type="password" placeholder="确认密码" show-password size="large" />
+        <el-input v-model="form.email" placeholder="邮箱" size="large" style="margin-bottom:12px" autocomplete="off" />
+        <el-input v-model="form.phone" placeholder="手机号（选填）" size="large" style="margin-bottom:12px" autocomplete="off" />
+        <el-input v-model="form.password" type="password" placeholder="密码（至少 8 位）" show-password size="large" style="margin-bottom:12px" autocomplete="new-password" />
+        <el-input v-model="form.confirmPassword" type="password" placeholder="确认密码" show-password size="large" autocomplete="new-password" />
       </div>
 
       <!-- ================================================================ -->

@@ -169,7 +169,7 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .quick-row { display:grid; grid-template-columns:repeat(4,1fr); gap:var(--spacing-base); margin-bottom:var(--spacing-xxl); }
-.quick-card { display:flex; align-items:center; gap:var(--spacing-md); padding:var(--spacing-lg); border:1px solid var(--color-border); border-radius:var(--radius-lg); background:var(--color-bg-card); cursor:pointer; transition:all var(--transition-base); &:hover { box-shadow:var(--shadow-md); transform:translateY(-2px); border-color:var(--color-primary-light); }
+.quick-card { display:flex; align-items:center; gap:var(--spacing-md); padding:var(--spacing-lg); border:1px solid var(--color-border); border-radius:var(--radius-lg); background:var(--color-bg-card); cursor:pointer; transition:all var(--transition-base); &:hover { box-shadow:var(--shadow-md); transform:translateY(-2px); border-color:var(--color-primary-light); } &:active { border-color:var(--color-primary); box-shadow:0 0 0 2px var(--color-primary-light); transform:translateY(0); }
   &__icon { width:40px; height:40px; border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   &__label { font-size:var(--font-size-base); font-weight:var(--font-weight-medium); color:var(--color-text-primary); }
 }
