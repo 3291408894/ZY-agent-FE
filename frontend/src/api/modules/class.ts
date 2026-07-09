@@ -88,7 +88,7 @@ export function getTeacherClassResources(classId: string, params?: { page?: numb
 
 /** 学生查看班级共享资源 — GET /api/v1/student/classes/{classId}/resources */
 export function getStudentClassResources(classId: string, params?: { page?: number; page_size?: number }) {
-  return get<any>(`/api/v1/student/classes/${classId}/resources`, params)
+  return get<any>(`/api/v1/student/classes/${classId}/resources`, params, { silent: true })
 }
 
 /** 学生保存资源到知识库 — POST /api/v1/student/classes/{classId}/resources/{resourceId}/save-to-knowledge */
@@ -104,7 +104,13 @@ export function getStudentClassExamPapers(
   return get<IPaginatedData<IClassExamPaperItem>>(
     `/api/v1/student/classes/${classId}/exam-papers`,
     params,
+    { silent: true },
   )
+}
+
+/** 学生开始在线作答 — POST /api/v1/student/classes/{classId}/exam-papers/{paperId}/start-answer */
+export function startExamAnswer(classId: string, paperId: string): Promise<{ assignment_id: string }> {
+  return post<{ assignment_id: string }>(`/api/v1/student/classes/${classId}/exam-papers/${paperId}/start-answer`)
 }
 
 /** 学生下载班级试卷 — GET /api/v1/student/classes/{classId}/exam-papers/{paperId}/download */

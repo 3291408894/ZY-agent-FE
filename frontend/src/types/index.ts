@@ -223,10 +223,13 @@ export interface IGradeResult {
 }
 
 export interface IExerciseBatch {
-  id: string
+  batch_id: string
   exercises: IExercise[]
-  grade_result?: IGradeResult
-  created_at: string
+  grade_result?: {
+    total_score: number
+    correct_count: number
+    total_count: number
+  } | null
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -539,6 +542,13 @@ export interface IAIFeedback {
   step_feedback: IStepFeedback[]
   error_analysis: string | null
   suggested_score: number
+  question_feedback?: Array<{
+    question_number: number
+    score: number
+    max_score?: number
+    overall_comment?: string
+    suggested_score?: number
+  }>
 }
 
 export interface ISubmissionDetail {
@@ -743,6 +753,7 @@ export interface IClassExamPaperItem {
   resource_type: 'exam_paper'
   shared_by: string
   shared_by_name: string
+  assignment_id: string | null  // 关联的作业ID，null 表示无在线作答
   created_at: string | null
 }
 

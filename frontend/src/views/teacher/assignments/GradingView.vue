@@ -1,8 +1,7 @@
 <script setup lang="ts">
 /**
  * 教师端 — 批改页面
- * 客观题：AI自动判分（只读显示）
- * 主观题：教师逐题输入分数
+ * 所有题目：教师手动输入分数（el-input-number），AI反馈作为参考
  * 总分自动计算
  */
 import { ref, computed, onMounted } from 'vue'
@@ -22,7 +21,7 @@ const assignment = ref<IAssignmentDetail | null>(null)
 const teacherFeedback = ref('')
 const submitting = ref(false)
 
-// 教师给每道主观题的评分
+// 教师给每道题的评分（包括客观题和主观题）
 const subjectiveScores = ref<Record<number, number>>({})
 
 // 所有题目（展平）
@@ -32,7 +31,7 @@ interface QuestionInfo {
   type: string
   options?: string[]
   answer: string
-  maxScore: number
+  score: number
 }
 const allQuestions = computed<QuestionInfo[]>(() => {
   const qs: QuestionInfo[] = []
@@ -56,21 +55,17 @@ const aiFeedbackMap = computed(() => {
   return map
 })
 
-// 总得分 = 客观题AI分 + 主观题教师输入分
+// 总得分 = 教师手动输入的逐题分数之和
 const computedTotal = computed(() => {
   let total = 0
   for (const q of allQuestions.value) {
-    if (q.type === 'objective') {
-      total += aiFeedbackMap.value[q.number]?.score || 0
-    } else {
-      total += subjectiveScores.value[q.number] || 0
-    }
+    total += subjectiveScores.value[q.number] || 0
   }
   return total
 })
 
 const maxScore = computed(() => {
-  return assignment.value?.total_score || allQuestions.value.reduce((s, q) => s + q.maxScore, 0)
+  return assignment.value?.total_score || allQuestions.value.reduce((s, q) => s + q.score, 0)
 })
 
 // 学生答案
@@ -86,12 +81,10 @@ onMounted(async () => {
   try {
     assignment.value = await store.fetchAssignmentDetail(assignmentId.value)
     await store.fetchSubmissionDetail(assignmentId.value, submissionId.value)
-    // 初始化主观题分数（使用AI建议值或0）
+    // 初始化所有题目分数（使用AI建议值或0）
     for (const q of allQuestions.value) {
-      if (q.type === 'subjective') {
-        const aiScore = aiFeedbackMap.value[q.number]?.suggested_score ?? aiFeedbackMap.value[q.number]?.score ?? 0
-        subjectiveScores.value[q.number] = aiScore
-      }
+      const aiScore = aiFeedbackMap.value[q.number]?.suggested_score ?? aiFeedbackMap.value[q.number]?.score ?? 0
+      subjectiveScores.value[q.number] = aiScore
     }
   } catch {
     router.push(`/teacher/assignments/${assignmentId.value}/submissions`)
@@ -102,30 +95,11 @@ function goBack() {
   router.push(`/teacher/assignments/${assignmentId.value}/submissions`)
 }
 
-// 确认AI批改（客观题AI+主观题AI建议，一键发布）
-async function handleConfirmAI() {
-  submitting.value = true
-  try {
-    await store.gradeAction(assignmentId.value, submissionId.value, {
-      confirm_ai_feedback: true,
-      teacher_feedback: teacherFeedback.value || undefined,
-    })
-    ElMessage.success('已发布，学生可见')
-    goBack()
-  } catch {
-    ElMessage.error('操作失败')
-  } finally {
-    submitting.value = false
-  }
-}
-
-// 手动逐题评分发布
-async function handleManualGrade() {
+// 发布评分
+async function handlePublish() {
   const scores = allQuestions.value.map((q) => ({
     question_number: q.number,
-    score: q.type === 'objective'
-      ? (aiFeedbackMap.value[q.number]?.score || 0)
-      : (subjectiveScores.value[q.number] || 0),
+    score: subjectiveScores.value[q.number] || 0,
   }))
   submitting.value = true
   try {
@@ -140,10 +114,6 @@ async function handleManualGrade() {
   } finally {
     submitting.value = false
   }
-}
-
-function hasAI() {
-  return !!store.currentSubmission?.ai_feedback
 }
 </script>
 
@@ -167,7 +137,7 @@ function hasAI() {
           <div class="q-header">
             <strong class="q-num">{{ q.number }}.</strong>
             <el-tag size="small" :type="q.type === 'objective' ? '' : 'warning'">
-              {{ q.type === 'objective' ? '客观' : '主观' }} {{ q.maxScore }}分
+              {{ q.type === 'objective' ? '客观' : '主观' }} {{ q.score }}分
             </el-tag>
           </div>
           <div class="q-stem">{{ q.stem }}</div>
@@ -183,35 +153,25 @@ function hasAI() {
         </div>
 
         <div class="q-right">
-          <!-- 客观题：显示AI自动判分（不可编辑） -->
-          <template v-if="q.type === 'objective'">
-            <div class="auto-score" :class="(aiFeedbackMap[q.number]?.score || 0) > 0 ? 'correct' : 'wrong'">
-              <span class="icon">{{ (aiFeedbackMap[q.number]?.score || 0) > 0 ? '✓' : '✗' }}</span>
-              <span class="val">{{ aiFeedbackMap[q.number]?.score || 0 }} / {{ q.maxScore }}</span>
-            </div>
-            <div v-if="aiFeedbackMap[q.number]?.overall_comment" class="ai-comment">
-              {{ aiFeedbackMap[q.number]?.overall_comment }}
-            </div>
-          </template>
-
-          <!-- 主观题：教师手动输入分数 -->
-          <template v-else>
-            <div class="manual-score">
-              <el-input-number
-                v-model="subjectiveScores[q.number]"
-                :min="0"
-                :max="q.maxScore"
-                :step="1"
-                size="small"
-                style="width: 100px"
-                @change="() => {}"
-              />
-              <span class="unit">/ {{ q.maxScore }} 分</span>
-            </div>
-            <div v-if="aiFeedbackMap[q.number]?.overall_comment" class="ai-hint">
-              AI建议：{{ aiFeedbackMap[q.number]?.score }}分 — {{ aiFeedbackMap[q.number]?.overall_comment }}
-            </div>
-          </template>
+          <!-- 所有题目：教师手动输入分数，AI反馈作为参考 -->
+          <div class="manual-score">
+            <el-input-number
+              v-model="subjectiveScores[q.number]"
+              :min="0"
+              :max="q.score"
+              :step="1"
+              size="small"
+              style="width: 100px"
+            />
+            <span class="unit">/ {{ q.score }} 分</span>
+          </div>
+          <div v-if="q.type === 'objective' && aiFeedbackMap[q.number]?.score !== undefined" class="ai-hint">
+            AI判分：{{ aiFeedbackMap[q.number]?.score }}分
+            <span v-if="aiFeedbackMap[q.number]?.overall_comment"> — {{ aiFeedbackMap[q.number]?.overall_comment }}</span>
+          </div>
+          <div v-if="q.type === 'subjective' && aiFeedbackMap[q.number]?.overall_comment" class="ai-hint">
+            AI建议：{{ aiFeedbackMap[q.number]?.score }}分 — {{ aiFeedbackMap[q.number]?.overall_comment }}
+          </div>
         </div>
       </div>
 
@@ -226,20 +186,12 @@ function hasAI() {
         />
         <div class="btn-group">
           <el-button
-            v-if="hasAI()"
             type="primary"
             size="large"
             :loading="submitting"
-            @click="handleConfirmAI"
+            @click="handlePublish"
           >
-            确认AI批改并发布（{{ computedTotal }}/{{ maxScore }}分）
-          </el-button>
-          <el-button
-            size="large"
-            :loading="submitting"
-            @click="handleManualGrade"
-          >
-            {{ hasAI() ? '修改后发布' : '发布评分' }}（{{ computedTotal }}/{{ maxScore }}分）
+            发布（{{ computedTotal }}/{{ maxScore }}分）
           </el-button>
         </div>
       </div>
@@ -308,17 +260,6 @@ function hasAI() {
   line-height: 1.5;
   min-height: 32px;
 }
-
-.auto-score {
-  font-size: 20px;
-  font-weight: bold;
-  padding: 8px;
-  border-radius: 6px;
-  &.correct { color: var(--el-color-success); background: var(--el-color-success-light-9); }
-  &.wrong { color: var(--el-color-danger); background: var(--el-color-danger-light-9); }
-  .icon { margin-right: 4px; }
-}
-.ai-comment { font-size: 11px; color: var(--el-text-color-secondary); margin-top: 4px; }
 
 .manual-score {
   display: flex;

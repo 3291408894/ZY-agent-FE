@@ -103,30 +103,38 @@ function onChoiceSelect(value: string) {
     <!-- 选择题                            -->
     <!-- ================================ -->
     <div v-if="exercise.question_type === 'choice' && exercise.options?.length" class="exercise-card__choices">
-      <div
-        v-for="(opt, optIdx) in exercise.options"
-        :key="optIdx"
-        class="exercise-card__option"
-        :class="getOptionClass(opt)"
-      >
-        <template v-if="!showCorrectAnswer">
-          <!-- practice 模式：可交互 radio -->
-          <el-radio
-            :model-value="userAnswer"
-            :value="opt"
-            @change="onChoiceSelect"
+      <template v-if="!showCorrectAnswer">
+        <!-- practice 模式：可交互 radio-group -->
+        <el-radio-group
+          :model-value="userAnswer"
+          class="exercise-card__radio-group"
+          @update:model-value="onChoiceSelect"
+        >
+          <div
+            v-for="(opt, optIdx) in exercise.options"
+            :key="optIdx"
+            class="exercise-card__option"
           >
-            <span class="option-label">{{ String.fromCharCode(65 + optIdx) }}.</span> {{ opt }}
-          </el-radio>
-        </template>
-        <template v-else>
-          <!-- review / graded：只读展示 -->
+            <el-radio :value="opt">
+              <span class="option-label">{{ String.fromCharCode(65 + optIdx) }}.</span> {{ opt }}
+            </el-radio>
+          </div>
+        </el-radio-group>
+      </template>
+      <template v-else>
+        <!-- review / graded：只读展示 -->
+        <div
+          v-for="(opt, optIdx) in exercise.options"
+          :key="optIdx"
+          class="exercise-card__option"
+          :class="getOptionClass(opt)"
+        >
           <span class="option-label" :class="getOptionClass(opt)">{{ String.fromCharCode(65 + optIdx) }}.</span>
           <span :class="getOptionClass(opt)">{{ opt }}</span>
           <span v-if="getOptionClass(opt) === 'option--correct'" class="option-badge">✓ 正确答案</span>
           <span v-if="getOptionClass(opt) === 'option--wrong'" class="option-badge option-badge--wrong">✗ 你的选择</span>
-        </template>
-      </div>
+        </div>
+      </template>
     </div>
 
     <!-- ================================ -->
@@ -281,10 +289,21 @@ function onChoiceSelect(value: string) {
     gap: var(--spacing-sm);
   }
 
+  &__radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
   &__option {
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--radius-sm);
     transition: background var(--transition-fast);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-bg);
+    }
   }
 
   // ── 输入区 ──

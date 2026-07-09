@@ -6,7 +6,7 @@
 import { ref, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
-import { getStudentClassResources, saveResourceToKnowledge, getStudentClassExamPapers, downloadStudentExamPaper } from '@/api/modules/class'
+import { getStudentClassResources, saveResourceToKnowledge, getStudentClassExamPapers, downloadStudentExamPaper, startExamAnswer } from '@/api/modules/class'
 import { downloadResource } from '@/api/modules/teachingResource'
 import { FILE_TYPE_ICONS, FILE_TYPE_LABELS, EXAM_TYPE_LABELS, type ExamType } from '@/types'
 import type { IClassResourceItem, IClassExamPaperItem } from '@/types'
@@ -19,6 +19,7 @@ const examPapers = ref<IClassExamPaperItem[]>([])
 const loading = ref(false)
 const savingId = ref<string | null>(null)
 const downloadingId = ref<string | null>(null)
+const startingId = ref<string | null>(null)
 
 // 合并两种资源的统一列表
 interface DisplayItem {
@@ -103,6 +104,26 @@ async function handleDownloadExamPaper(item: IClassExamPaperItem) {
     // 错误已在拦截器中处理
   } finally {
     downloadingId.value = null
+  }
+}
+
+async function handleOnlineAnswer(item: IClassExamPaperItem) {
+  // 如果已有作业，直接跳转
+  if (item.assignment_id) {
+    router.push(`/student/assignments/${item.assignment_id}`)
+    return
+  }
+
+  // 按需创建作业（兼容历史数据 / 兜底）
+  startingId.value = item.exam_paper_id
+  try {
+    const result = await startExamAnswer(props.classId, item.exam_paper_id)
+    ElMessage.success('已创建在线作答，即将进入答题')
+    router.push(`/student/assignments/${result.assignment_id}`)
+  } catch {
+    // 错误已在拦截器中处理
+  } finally {
+    startingId.value = null
   }
 }
 
@@ -199,6 +220,15 @@ watch(() => props.classId, () => { fetchAll() }, { immediate: true })
             <el-button size="small" type="primary" @click="handleViewExamPaper(item.data)">
               <el-icon :size="14"><View /></el-icon>
               查看
+            </el-button>
+            <el-button
+              size="small"
+              type="success"
+              :loading="startingId === item.data.exam_paper_id"
+              @click="handleOnlineAnswer(item.data)"
+            >
+              <el-icon :size="14"><Edit /></el-icon>
+              在线作答
             </el-button>
             <el-button
               size="small"

@@ -57,14 +57,11 @@ onUnmounted(() => abortCtrl.value?.abort())
 
 <template>
   <div class="page-container">
-    <div class="page-header">
-      <div>
-        <h1 class="page-header__title">习题练习</h1>
-        <p class="page-header__subtitle">AI 智能出题 · 自动批改 · 错题解析</p>
-      </div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:var(--spacing-base)">
       <el-button
         v-if="stage !== 'history'"
-        size="default"
+        size="small"
+        text
         @click="stage = 'history'"
       >
         📋 历史记录

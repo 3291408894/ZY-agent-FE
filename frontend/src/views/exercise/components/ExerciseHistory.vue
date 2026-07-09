@@ -1,13 +1,13 @@
 <script setup lang="ts">
 // ================================================================
-// ExerciseHistory — 历史练习记录
-// 分页展示历史练习，点击查看详情
+// ExerciseHistory — 历史练习记录（按批次分组展示）
 // ================================================================
 
 import { ref, onMounted, computed } from 'vue'
-import { ElMessage } from 'element-plus'
-import { getExerciseHistory, deleteExerciseBatch } from '@/api/modules/exercise'
-import type { IExerciseBatch } from '@/types'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { getExerciseHistory, getExerciseBatch, deleteExerciseBatch } from '@/api/modules/exercise'
+import type { IExercise, IExerciseBatch, IGradeResult } from '@/types'
+import ExerciseCard from './ExerciseCard.vue'
 
 // ── Emits ──
 const emit = defineEmits<{
@@ -16,41 +16,39 @@ const emit = defineEmits<{
 }>()
 
 // ── 状态 ──
-const records = ref<IExerciseBatch[]>([])
+interface IBatchSummary {
+  batch_id: string
+  subject: string
+  grade: string
+  difficulty: string
+  exercise_count: number
+  graded_count: number
+  correct_count: number
+  knowledge_points: string[]
+  weak_knowledge_points: string[]
+  created_at: string
+}
+
+const records = ref<IBatchSummary[]>([])
 const loading = ref(false)
 const page = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
 
+// 展开详情
+const expandedBatchId = ref<string | null>(null)
+const detailExercises = ref<IExercise[]>([])
+const detailGradeResult = ref<IGradeResult | null>(null)
+const detailLoading = ref(false)
+
 // ── 计算属性 ──
 const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
 
-// ── 薄弱知识点汇总 ──
-const weakPointsSummary = computed(() => {
-  const freq: Record<string, number> = {}
-  records.value.forEach(record => {
-    if (record.grade_result) {
-      record.grade_result.results
-        .filter(r => !r.is_correct)
-        .forEach(r => {
-          r.related_knowledge?.forEach(kp => {
-            freq[kp] = (freq[kp] || 0) + 1
-          })
-        })
-    }
-  })
-  return Object.entries(freq)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 8)
-    .map(([kp, count]) => ({ name: kp, count }))
-})
-
-// ── 加载数据 ──
+// ── 加载历史列表 ──
 async function loadHistory() {
   loading.value = true
   try {
     const res: any = await getExerciseHistory({ page: page.value, page_size: pageSize.value })
-    // API 返回分页结构 { items, total, page, page_size, total_pages }
     records.value = res.items || []
     total.value = res.total || 0
   } catch (e: any) {
@@ -62,7 +60,28 @@ async function loadHistory() {
 
 function handlePageChange(newPage: number) {
   page.value = newPage
+  expandedBatchId.value = null
   loadHistory()
+}
+
+// ── 展开/折叠批次详情 ──
+async function toggleBatchDetail(batchId: string) {
+  if (expandedBatchId.value === batchId) {
+    expandedBatchId.value = null
+    return
+  }
+  expandedBatchId.value = batchId
+  detailLoading.value = true
+  try {
+    const detail: any = await getExerciseBatch(batchId)
+    detailExercises.value = detail.exercises || []
+    detailGradeResult.value = detail.grade_result || null
+  } catch (e: any) {
+    ElMessage.error(e?.message || '加载详情失败')
+    expandedBatchId.value = null
+  } finally {
+    detailLoading.value = false
+  }
 }
 
 // ── 格式化 ──
@@ -82,35 +101,56 @@ function formatDate(dateStr: string) {
   return d.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
 }
 
-function getCorrectCount(record: IExerciseBatch) {
-  return record.grade_result?.correct_count
+function formatFullDate(dateStr: string) {
+  if (!dateStr) return ''
+  return new Date(dateStr).toLocaleString('zh-CN', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  })
 }
 
-function getTotalCount(record: IExerciseBatch) {
-  return record.grade_result?.total_count || record.exercises?.length || 0
+function getCorrectRate(record: IBatchSummary) {
+  if (!record.graded_count) return null
+  return Math.round((record.correct_count / record.exercise_count) * 100)
 }
 
-function getCorrectRate(record: IExerciseBatch) {
-  const total = getTotalCount(record)
-  if (!total) return null
-  const correct = getCorrectCount(record) || 0
-  return Math.round((correct / total) * 100)
-}
-
-function getSubjects(record: IExerciseBatch) {
-  const subjects = new Set(record.exercises?.map(e => e.subject) || [])
-  return [...subjects].join('、')
+function getStatusTag(record: IBatchSummary) {
+  if (!record.graded_count) return { label: '未作答', type: 'info' as const }
+  const rate = getCorrectRate(record) || 0
+  if (rate >= 80) return { label: '优秀', type: 'success' as const }
+  if (rate >= 60) return { label: '良好', type: 'warning' as const }
+  return { label: '需加强', type: 'danger' as const }
 }
 
 // ── 删除 ──
 async function handleDelete(batchId: string) {
   try {
+    await ElMessageBox.confirm('确定要删除这组练习记录吗？删除后不可恢复。', '确认删除', {
+      confirmButtonText: '确定删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+  } catch {
+    // 用户取消或关闭弹窗，不做任何操作
+    return
+  }
+  try {
     await deleteExerciseBatch(batchId)
     ElMessage.success('已删除')
+    if (expandedBatchId.value === batchId) expandedBatchId.value = null
     loadHistory()
   } catch (e: any) {
     ElMessage.error(e?.message || '删除失败')
   }
+}
+
+function getGradeForExercise(exerciseId: string) {
+  return null // detail view shows in review mode
+}
+
+// ── 获取某题的用户答案 ──
+function getUserAnswer(exercise: any) {
+  return exercise.user_answer || ''
 }
 
 onMounted(() => {
@@ -120,28 +160,13 @@ onMounted(() => {
 
 <template>
   <div class="exercise-history">
+    <!-- 头部 -->
     <div class="exercise-history__header">
       <div>
-        <h2>练习记录</h2>
-        <p class="exercise-history__subtitle">共 {{ total }} 条记录</p>
+        <h2>📋 练习记录</h2>
+        <p class="exercise-history__subtitle">共 {{ total }} 组练习</p>
       </div>
-      <el-button @click="emit('back')">返回出题</el-button>
-    </div>
-
-    <!-- ── 薄弱知识点汇总 ── -->
-    <div v-if="weakPointsSummary.length > 0" class="weak-summary">
-      <h3>🔍 薄弱知识点汇总</h3>
-      <p class="weak-summary__subtitle">根据历史错题统计，以下知识点需要加强练习：</p>
-      <div class="weak-summary__list">
-        <div
-          v-for="wp in weakPointsSummary"
-          :key="wp.name"
-          class="weak-summary__item"
-        >
-          <span class="weak-summary__name">{{ wp.name }}</span>
-          <el-tag type="danger" size="small" effect="dark">错 {{ wp.count }} 次</el-tag>
-        </div>
-      </div>
+      <el-button @click="emit('back')">← 返回出题</el-button>
     </div>
 
     <!-- 空状态 -->
@@ -158,62 +183,104 @@ onMounted(() => {
       <el-skeleton :rows="3" animated />
     </div>
 
-    <!-- 记录列表 -->
+    <!-- 批次列表 -->
     <div v-if="!loading && records.length > 0" class="exercise-history__list">
       <div
         v-for="record in records"
-        :key="record.id"
-        class="history-item card-hover"
-        @click="emit('view-detail', record.id)"
+        :key="record.batch_id"
+        class="batch-card"
       >
-        <div class="history-item__main">
-          <div class="history-item__info">
-            <span class="history-item__date">{{ formatDate(record.created_at) }}</span>
-            <span class="history-item__subjects">{{ getSubjects(record) }}</span>
-            <div class="history-item__tags">
-              <el-tag
-                v-for="kp in record.exercises?.[0]?.knowledge_points?.slice(0, 3) || []"
-                :key="kp"
-                size="small"
-                type="info"
-              >
-                {{ kp }}
-              </el-tag>
+        <!-- 批次摘要 -->
+        <div class="batch-card__summary" @click="toggleBatchDetail(record.batch_id)">
+          <div class="batch-card__left">
+            <!-- 日期 -->
+            <div class="batch-card__date">
+              <div class="batch-card__date-day">{{ formatDate(record.created_at) }}</div>
+              <div class="batch-card__date-full">{{ formatFullDate(record.created_at) }}</div>
+            </div>
+            <!-- 信息 -->
+            <div class="batch-card__info">
+              <div class="batch-card__title">
+                {{ record.subject }} · {{ record.grade }}
+                <el-tag size="small" :type="record.difficulty === 'easy' ? 'success' : record.difficulty === 'medium' ? 'warning' : 'danger'">
+                  {{ record.difficulty === 'easy' ? '简单' : record.difficulty === 'medium' ? '中等' : '困难' }}
+                </el-tag>
+              </div>
+              <div class="batch-card__knowledge">
+                <el-tag
+                  v-for="kp in record.knowledge_points.slice(0, 4)"
+                  :key="kp"
+                  size="small"
+                  type="info"
+                >
+                  {{ kp }}
+                </el-tag>
+                <span v-if="record.knowledge_points.length > 4" class="batch-card__more-kp">
+                  +{{ record.knowledge_points.length - 4 }}
+                </span>
+              </div>
             </div>
           </div>
 
-          <div class="history-item__stats">
-            <template v-if="record.grade_result">
-              <span class="history-item__score">
-                {{ record.grade_result.total_score }} 分
-              </span>
-              <span class="history-item__rate" :class="{
-                'text-success': (getCorrectRate(record) || 0) >= 80,
-                'text-warning': (getCorrectRate(record) || 0) >= 60 && (getCorrectRate(record) || 0) < 80,
-                'text-danger': (getCorrectRate(record) || 0) < 60,
-              }">
-                正确率 {{ getCorrectRate(record) }}%
-              </span>
-              <span class="history-item__count">
-                {{ getCorrectCount(record) }}/{{ getTotalCount(record) }} 题
-              </span>
+          <!-- 统计 -->
+          <div class="batch-card__stats">
+            <el-tag :type="getStatusTag(record).type" effect="plain" size="small">
+              {{ getStatusTag(record).label }}
+            </el-tag>
+            <div class="batch-card__stat-item">
+              <span class="batch-card__stat-value">{{ record.exercise_count }}</span>
+              <span class="batch-card__stat-label">题</span>
+            </div>
+            <template v-if="record.graded_count > 0">
+              <div class="batch-card__stat-divider"></div>
+              <div class="batch-card__stat-item">
+                <span class="batch-card__stat-value text-success">{{ record.correct_count }}</span>
+                <span class="batch-card__stat-label">对</span>
+              </div>
+              <div class="batch-card__stat-item">
+                <span class="batch-card__stat-value" :class="getCorrectRate(record)! >= 80 ? 'text-success' : getCorrectRate(record)! >= 60 ? 'text-warning' : 'text-danger'">
+                  {{ getCorrectRate(record) }}%
+                </span>
+                <span class="batch-card__stat-label">正确率</span>
+              </div>
             </template>
-            <template v-else>
-              <el-tag type="warning" size="small">未批改</el-tag>
-              <span class="history-item__count">{{ record.exercises?.length || 0 }} 题</span>
-            </template>
+            <el-icon class="batch-card__chevron" :class="{ 'is-expanded': expandedBatchId === record.batch_id }">
+              <ArrowDown />
+            </el-icon>
           </div>
         </div>
 
-        <div class="history-item__actions" @click.stop>
-          <el-button
-            type="danger"
-            size="small"
-            text
-            @click="handleDelete(record.id)"
-          >
+        <!-- 删除按钮 -->
+        <div class="batch-card__actions-row">
+          <el-button type="danger" size="small" text @click.stop="handleDelete(record.batch_id)">
             删除
           </el-button>
+        </div>
+
+        <!-- 展开的习题详情 -->
+        <div v-if="expandedBatchId === record.batch_id" class="batch-card__detail">
+          <div v-if="detailLoading" class="batch-card__detail-loading">
+            <el-skeleton :rows="2" animated />
+          </div>
+          <div v-else class="batch-card__exercises">
+            <ExerciseCard
+              v-for="(exercise, idx) in detailExercises"
+              :key="exercise.id"
+              :exercise="exercise"
+              mode="review"
+              :user-answer="getUserAnswer(exercise)"
+              :grade-result="null"
+              :index="idx + 1"
+            />
+          </div>
+
+          <!-- 批次成绩总览 -->
+          <div v-if="detailGradeResult" class="batch-card__grade-summary">
+            <span>📊 本组成绩：</span>
+            <strong>{{ detailGradeResult.total_score }} 分</strong>
+            <span class="batch-card__grade-divider">|</span>
+            <span>正确 {{ detailGradeResult.correct_count }}/{{ detailGradeResult.total_count }} 题</span>
+          </div>
         </div>
       </div>
     </div>
@@ -233,7 +300,7 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .exercise-history {
-  max-width: 800px;
+  max-width: 860px;
   margin: 0 auto;
 
   &__header {
@@ -270,19 +337,52 @@ onMounted(() => {
   }
 }
 
-// 历史记录项
-.history-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-lg);
-  cursor: pointer;
+// ── 批次卡片 ──
+.batch-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: box-shadow var(--transition-fast);
 
-  &__main {
+  &:hover {
+    box-shadow: var(--shadow-sm);
+  }
+
+  &__summary {
     display: flex;
     align-items: center;
-    gap: var(--spacing-xl);
+    justify-content: space-between;
+    padding: var(--spacing-lg);
+    cursor: pointer;
+    user-select: none;
+    gap: var(--spacing-base);
+  }
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    min-width: 0;
     flex: 1;
+  }
+
+  &__date {
+    flex-shrink: 0;
+    text-align: center;
+    min-width: 56px;
+  }
+
+  &__date-day {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-primary);
+    font-size: var(--font-size-base);
+  }
+
+  &__date-full {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-placeholder);
+    margin-top: 2px;
   }
 
   &__info {
@@ -292,102 +392,144 @@ onMounted(() => {
     min-width: 0;
   }
 
-  &__date {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-secondary);
-  }
-
-  &__subjects {
+  &__title {
     font-weight: var(--font-weight-medium);
     font-size: var(--font-size-base);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
   }
 
-  &__tags {
+  &__knowledge {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
+    align-items: center;
+  }
+
+  &__more-kp {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
   }
 
   &__stats {
     display: flex;
     align-items: center;
-    gap: var(--spacing-base);
+    gap: var(--spacing-sm);
     flex-shrink: 0;
   }
 
-  &__score {
-    font-size: var(--font-size-xl);
+  &__stat-item {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+  }
+
+  &__stat-value {
+    font-size: var(--font-size-lg);
     font-weight: var(--font-weight-bold);
-    color: var(--color-primary);
+    color: var(--color-text-primary);
   }
 
-  &__rate {
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-medium);
-  }
-
-  &__count {
-    font-size: var(--font-size-sm);
+  &__stat-label {
+    font-size: var(--font-size-xs);
     color: var(--color-text-secondary);
   }
 
-  &__actions {
-    flex-shrink: 0;
-    margin-left: var(--spacing-base);
+  &__stat-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--color-border-light);
+  }
+
+  &__chevron {
+    color: var(--color-text-secondary);
+    transition: transform var(--transition-fast);
+
+    &.is-expanded {
+      transform: rotate(180deg);
+    }
+  }
+
+  &__actions-row {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 var(--spacing-lg) var(--spacing-sm);
+  }
+
+  // ── 展开详情 ──
+  &__detail {
+    border-top: 1px solid var(--color-border-light);
+    padding: var(--spacing-lg);
+    background: var(--color-bg);
+  }
+
+  &__detail-loading {
+    padding: var(--spacing-base) 0;
+  }
+
+  &__exercises {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-base);
+  }
+
+  &__grade-summary {
+    margin-top: var(--spacing-base);
+    padding: var(--spacing-sm) var(--spacing-base);
+    background: var(--color-primary-lighter);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+
+    strong {
+      color: var(--color-primary);
+      font-size: var(--font-size-base);
+    }
+  }
+
+  &__grade-divider {
+    margin: 0 var(--spacing-sm);
+    color: var(--color-border);
   }
 }
 
-// 颜色辅助
+// ── 空状态 ──
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-xxxl) 0;
+
+  &__icon { font-size: 48px; }
+  &__text {
+    font-size: var(--font-size-base);
+    color: var(--color-text-secondary);
+    margin-top: var(--spacing-sm);
+  }
+}
+
+// ── 颜色辅助 ──
 .text-success { color: var(--color-success); }
 .text-warning { color: var(--color-warning); }
 .text-danger { color: var(--color-danger); }
 
-// ── 薄弱知识点汇总 ──
-.weak-summary {
-  background: var(--color-warning-light);
-  border: 1px solid var(--color-warning);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-lg);
-  margin-bottom: var(--spacing-xl);
-
-  h3 {
-    font-size: var(--font-size-base);
-    margin-bottom: var(--spacing-xs);
-  }
-
-  &__subtitle {
-    font-size: var(--font-size-xs);
-    color: var(--color-text-secondary);
-    margin: 0 0 var(--spacing-md);
-  }
-
-  &__list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--spacing-sm);
-  }
-
-  &__item {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-xs) var(--spacing-base);
-    background: white;
-    border-radius: var(--radius-sm);
-  }
-
-  &__name {
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-medium);
-  }
-}
-
 // ── 响应式 ──
 @media (max-width: 640px) {
-  .history-item__main {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-sm);
+  .batch-card {
+    &__summary {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    &__left {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--spacing-sm);
+    }
+
+    &__stats {
+      width: 100%;
+      justify-content: flex-start;
+    }
   }
 }
 </style>
