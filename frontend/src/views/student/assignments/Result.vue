@@ -13,9 +13,8 @@ const assignmentStore = useAssignmentStore()
 const assignmentId = computed(() => route.params.id as string)
 
 onMounted(async () => {
-  try {
-    await assignmentStore.fetchMySubmission(assignmentId.value)
-  } catch {
+  const submission = await assignmentStore.fetchMySubmission(assignmentId.value)
+  if (!submission) {
     router.push('/student/assignments')
   }
 })

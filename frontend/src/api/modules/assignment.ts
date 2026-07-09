@@ -2,7 +2,7 @@
  * 作业管理 API 模块 (功能5) — 教师端 + 学生端
  */
 
-import { get, post, del } from '../request'
+import { get, post, del, patch } from '../request'
 import type {
   IAssignmentCreate,
   IAssignmentItem,
@@ -44,7 +44,7 @@ export function getAssignmentDetail(assignmentId: string): Promise<IAssignmentDe
 
 /** 修改作业 */
 export function updateAssignment(assignmentId: string, data: Partial<IAssignmentCreate>): Promise<void> {
-  return post(`/api/v1/teacher/assignments/${assignmentId}`, data)
+  return patch(`/api/v1/teacher/assignments/${assignmentId}`, data)
 }
 
 /** 删除作业 */

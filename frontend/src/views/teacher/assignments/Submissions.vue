@@ -11,7 +11,7 @@ const route = useRoute()
 const router = useRouter()
 const assignmentStore = useAssignmentStore()
 
-const assignmentId = computed(() => route.params.id as string)
+const assignmentId = computed(() => route.params.assignmentId as string)
 const filterStatus = ref('')
 
 onMounted(() => loadSubmissions())
@@ -27,7 +27,7 @@ async function loadSubmissions() {
 }
 
 function goGrading(submissionId: string) {
-  router.push(`/teacher/assignments/${assignmentId.value}/grade/${submissionId}`)
+  router.push(`/teacher/assignments/${assignmentId.value}/submissions/${submissionId}`)
 }
 
 async function handleBatchGrade() {
