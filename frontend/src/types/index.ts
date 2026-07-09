@@ -345,7 +345,7 @@ export interface IClassCreateRequest {
 export interface IRosterStudent {
   id: string
   student_id: string
-  student_name: string
+  nickname: string
   joined_at: string
 }
 

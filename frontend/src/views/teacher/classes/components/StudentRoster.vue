@@ -67,7 +67,7 @@ function formatDate(dateStr: string) {
       empty-text="暂无学生加入"
     >
       <el-table-column label="序号" type="index" width="80" align="center" />
-      <el-table-column prop="student_name" label="学生姓名" min-width="150" />
+      <el-table-column prop="nickname" label="学生姓名" min-width="150" />
       <el-table-column label="加入时间" min-width="200">
         <template #default="{ row }">
           {{ formatDate(row.joined_at) }}
@@ -85,7 +85,7 @@ function formatDate(dateStr: string) {
             type="danger"
             size="small"
             text
-            @click="handleRemove(row.student_id, row.student_name)"
+            @click="handleRemove(row.student_id, row.nickname)"
           >
             移除
           </el-button>
