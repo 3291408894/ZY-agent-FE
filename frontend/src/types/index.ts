@@ -126,6 +126,7 @@ export interface ISummaryListQuery {
   page: number
   page_size: number
   mode?: SummaryMode
+  keyword?: string
 }
 
 // ═══════════════════════════════════════════════════════════
