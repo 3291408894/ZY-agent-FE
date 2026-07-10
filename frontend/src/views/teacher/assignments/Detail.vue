@@ -25,6 +25,11 @@ function goSubmissions() {
   router.push(`/teacher/assignments/${assignmentId.value}/submissions`)
 }
 
+// 去除选项文本中可能带有的 "A." / "B." / "C." / "D." 前缀（防御性处理）
+function stripOptionPrefix(text: string): string {
+  return text.replace(/^[A-D][.)]\s*/, '')
+}
+
 function goStats() {
   router.push(`/teacher/assignments/${assignmentId.value}/stats`)
 }
@@ -76,7 +81,7 @@ function formatDate(d: string) {
           <div v-for="q in section.questions" :key="q.number" class="question-item">
             <p class="q-stem"><strong>{{ q.number }}.</strong> <MathRenderer :text="q.stem" /> <span class="q-score">（{{ q.score }}分）</span></p>
             <p v-if="q.options?.length" class="q-options">
-              <span v-for="(opt, i) in q.options" :key="i"><MathRenderer :text="opt" /></span>
+              <span v-for="(opt, i) in q.options" :key="i"><MathRenderer :text="stripOptionPrefix(opt)" /></span>
             </p>
             <p class="q-answer"><em>参考答案：<MathRenderer :text="q.answer" /></em></p>
           </div>

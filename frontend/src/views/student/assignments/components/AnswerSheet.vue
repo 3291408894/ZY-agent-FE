@@ -47,6 +47,11 @@ function isAnswered(num: number) {
   return !!answers[num]?.trim()
 }
 
+// 去除选项文本中可能带有的 "A." / "B." / "C." / "D." 前缀（防御性处理）
+function stripOptionPrefix(text: string): string {
+  return text.replace(/^[A-D][.)]\s*/, '')
+}
+
 const answeredCount = computed(() => allQuestions.value.filter((q) => isAnswered(q.number)).length)
 </script>
 
@@ -85,7 +90,7 @@ const answeredCount = computed(() => allQuestions.value.filter((q) => isAnswered
             :value="String.fromCharCode(65 + oi)"
             class="option-item"
           >
-            <MathRenderer :text="opt" />
+            <MathRenderer :text="stripOptionPrefix(opt)" />
           </el-radio>
         </el-radio-group>
       </template>

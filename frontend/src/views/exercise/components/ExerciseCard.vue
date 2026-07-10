@@ -49,6 +49,11 @@ const isGraded = computed(() => !!props.gradeResult)
 const showCorrectAnswer = computed(() => isReview.value || isGraded.value)
 const showAnalysis = computed(() => isReview.value || isGraded.value)
 
+// 去除选项文本中可能带有的 "A." / "B." / "C." / "D." 前缀（防御性处理）
+function stripOptionPrefix(text: string): string {
+  return text.replace(/^[A-D][.)]\s*/, '')
+}
+
 // 选择题：判断某个选项的状态
 function getOptionClass(optionLabel: string) {
   if (!isGraded.value && !isReview.value) return ''
@@ -116,7 +121,7 @@ function onChoiceSelect(value: string) {
             class="exercise-card__option"
           >
             <el-radio :value="opt">
-              <span class="option-label">{{ String.fromCharCode(65 + optIdx) }}.</span> {{ opt }}
+              <span class="option-label">{{ String.fromCharCode(65 + optIdx) }}.</span> {{ stripOptionPrefix(opt) }}
             </el-radio>
           </div>
         </el-radio-group>
@@ -130,7 +135,7 @@ function onChoiceSelect(value: string) {
           :class="getOptionClass(opt)"
         >
           <span class="option-label" :class="getOptionClass(opt)">{{ String.fromCharCode(65 + optIdx) }}.</span>
-          <span :class="getOptionClass(opt)">{{ opt }}</span>
+          <span :class="getOptionClass(opt)">{{ stripOptionPrefix(opt) }}</span>
           <span v-if="getOptionClass(opt) === 'option--correct'" class="option-badge">✓ 正确答案</span>
           <span v-if="getOptionClass(opt) === 'option--wrong'" class="option-badge option-badge--wrong">✗ 你的选择</span>
         </div>

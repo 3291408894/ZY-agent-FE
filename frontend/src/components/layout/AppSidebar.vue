@@ -224,15 +224,22 @@ function navigate(path: string) {
       text-align: left;
       white-space: nowrap;
 
+      border: none;
+      background: var(--color-bg-sidebar);
+      box-shadow: none;
+      outline: none;
+
+      // hover时开启底部阴影+浅色背景
       &:hover {
         background: var(--color-primary-lighter);
         color: var(--color-primary);
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08); // 只有向下的阴影
       }
-    }
 
-    &__icon {
-      flex-shrink: 0;
-      transition: margin var(--transition-base);
+      // 消除按钮聚焦自带轮廓
+      &:focus {
+        box-shadow: none;
+      }
     }
 
     &__text {
@@ -249,6 +256,8 @@ function navigate(path: string) {
       background: var(--color-primary-light);
       color: var(--color-primary);
       font-weight: var(--font-weight-semibold);
+      border: none;
+      box-shadow: none; // 选中状态不要阴影，只hover出现阴影
     }
 
     // 即将上线

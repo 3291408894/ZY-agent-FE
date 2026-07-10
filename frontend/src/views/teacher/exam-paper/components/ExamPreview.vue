@@ -22,6 +22,11 @@ function questionTypeLabel(type: string) {
   }
   return map[type] || type
 }
+
+// 去除选项文本中可能带有的 "A." / "B." / "C." / "D." 前缀（防御性处理）
+function stripOptionPrefix(text: string): string {
+  return text.replace(/^[A-D][.)]\s*/, '')
+}
 </script>
 
 <template>
@@ -87,7 +92,7 @@ function questionTypeLabel(type: string) {
               :key="oi"
               class="exam-preview__option"
             >
-              <MathRenderer :text="opt" />
+              <MathRenderer :text="stripOptionPrefix(opt)" />
             </span>
           </div>
 

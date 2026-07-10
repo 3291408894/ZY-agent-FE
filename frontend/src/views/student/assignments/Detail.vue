@@ -97,6 +97,11 @@ function isOverdue(d: string) {
   return new Date(d) < new Date()
 }
 
+// 去除选项文本中可能带有的 "A." / "B." / "C." / "D." 前缀（防御性处理）
+function stripOptionPrefix(text: string): string {
+  return text.replace(/^[A-D][.)]\s*/, '')
+}
+
 const submissionStatusText: Record<string, string> = {
   submitted: '作业已提交，等待教师批改',
   grading: 'AI 正在批改中，请稍后查看结果',
@@ -187,7 +192,7 @@ const submissionStatusText: Record<string, string> = {
               :class="{ selected: answerMap[q.number] === String.fromCharCode(65 + oi) }"
             >
               <span class="opt-letter">{{ String.fromCharCode(65 + oi) }}</span>
-              <span class="opt-text"><MathRenderer :text="opt" /></span>
+              <span class="opt-text"><MathRenderer :text="stripOptionPrefix(opt)" /></span>
               <el-icon v-if="answerMap[q.number] === String.fromCharCode(65 + oi)" class="opt-check">
                 <Check />
               </el-icon>

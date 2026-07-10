@@ -67,6 +67,11 @@ function scoreRate(qNumber: number, qScore: number): number {
   return Math.round((fb.score / qScore) * 100)
 }
 
+// 去除选项文本中可能带有的 "A." / "B." / "C." / "D." 前缀（防御性处理）
+function stripOptionPrefix(text: string): string {
+  return text.replace(/^[A-D][.)]\s*/, '')
+}
+
 /** 正确题数 */
 const correctCount = computed(() => {
   return allQuestions.value.filter((q) => {
@@ -166,7 +171,7 @@ function goBack() {
               :class="{ selected: answerMap[q.number] === String.fromCharCode(65 + oi) }"
             >
               <span class="opt-letter">{{ String.fromCharCode(65 + oi) }}</span>
-              <span class="opt-text"><MathRenderer :text="opt" /></span>
+              <span class="opt-text"><MathRenderer :text="stripOptionPrefix(opt)" /></span>
               <el-icon
                 v-if="answerMap[q.number] === String.fromCharCode(65 + oi)"
                 class="opt-check"
